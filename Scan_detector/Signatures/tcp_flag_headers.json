@@ -1,0 +1,79 @@
+{
+    "name": "Signatures",
+    "Data_Points": ["nmap", "rustscan", "snmpwalk"],
+    "signatures": [
+        {
+            "sig_type": "nmap",
+            "sig_name": "Open Syn Scan (sS)",
+            "sig_cont": ["0x0002", "0x0012", "0x0004"],
+            "sig_desc": "This is a the result of a open NMAP Syn scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "Closed Syn Scan (sS)",
+            "sig_cont": ["0x0002", "0x0014"],
+            "sig_desc": "This is a the result of a closed NMAP Syn scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "FIN Scan (sF)",
+            "sig_cont": ["0x0001", "0x0014"],
+            "sig_desc": "This is a the result of a NMAP Fin scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "Ack Scan (sA)",
+            "sig_cont": ["0x0010", "0x0004"],
+            "sig_desc": "This is a the result of a NMAP Ack scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "Maimon Scan (sM)",
+            "sig_cont": ["0x0011", "0x0004"],
+            "sig_desc": "This is a the result of a NMAP Maimon scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "Open Null Scan (sN)",
+            "sig_cont": ["0x0000"],
+            "sig_desc": "This is a the result of a open NMAP  scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "Closed Null Scan (sN) ",
+            "sig_cont": ["0x0000","0x0014"],
+            "sig_desc": "This is a the result of a open NMAP  scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "",
+            "sig_cont": ["0x0011", "0x0004"],
+            "sig_desc": "This is a the result of a open NMAP  scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "",
+            "sig_cont": ["0x0011", "0x0004"],
+            "sig_desc": "This is a the result of a open NMAP  scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
+            "sig_name": "",
+            "sig_cont": ["0x0011", "0x0004"],
+            "sig_desc": "This is a the result of a open NMAP  scan on port PORTX"
+         },
+        {
+            "sig_type": "rustscan",
+            "sig_name": "",
+            "sig_cont": [],
+            "sig_desc": ""
+         },
+        {
+            "sig_type": "snmpwalk",
+            "sig_name": "",
+            "sig_cont": [],
+            "sig_desc": ""
+         }
+    ]
+
+}

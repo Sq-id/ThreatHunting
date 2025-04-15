@@ -1,0 +1,15 @@
+{
+    "name": "Network Signatures",
+    "Data_Points": ["TCP UDP Flag Headers", "rustscan", "snmpwalk"],
+    "signatures": [
+        {
+            "sig_type": "tcp udp flag header",
+            "sig_desc": "This will Parse PCAP Data scrubbing TCP/UDP Flag headers "
+         },
+        {
+            "sig_type": "Example",
+            "sig_desc": "This is a the result of a closed NMAP Syn scan on port PORTX"
+         }
+    ]
+
+}

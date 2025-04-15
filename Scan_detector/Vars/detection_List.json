@@ -1,0 +1,23 @@
+{
+    "name": "Signatures Types",
+    "Data_Points": ["Network Based Signature", "Host Based Signatures", "Add Signatues"],
+    "signatures": [
+        {
+            "sig_type": "Network Based Signatures",
+            "sig_desc": ""
+         },
+        {
+            "sig_type": "Host Based Signatures",
+            "sig_desc": ""
+         },
+         {
+            "sig_type": "Add Signatues",
+            "sig_desc": ""
+         },
+         {
+            "sig_type": "Exit",
+            "sig_desc": ""
+         }
+    ]
+
+}
