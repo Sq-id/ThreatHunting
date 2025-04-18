@@ -10,6 +10,12 @@
          },
         {
             "sig_type": "nmap",
+            "sig_name": "Open Syn Scan (sS) ",
+            "sig_cont": ["0x0002", "0x0012","0x0010", "0x0014"],
+            "sig_desc": "This is a the result of a open NMAP Syn scan on port PORTX"
+         },
+        {
+            "sig_type": "nmap",
             "sig_name": "Closed Syn Scan (sS)",
             "sig_cont": ["0x0002", "0x0014"],
             "sig_desc": "This is a the result of a closed NMAP Syn scan on port PORTX"
