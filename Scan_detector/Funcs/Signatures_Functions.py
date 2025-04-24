@@ -70,9 +70,6 @@ def tcp_udp_flag_header():
                                         scan_detection_counter=scan_detection_counter + 1
                                         gather_and_build_matrix(key,scans,port,range(length))
                                         
-
-                
-
                                         
         for key in udp_pkt_to_stream_dict.keys():
                 pkts=udp_pkt_to_stream_dict[key]
@@ -103,4 +100,4 @@ def tcp_udp_flag_header():
             print("Number of Scans detected:", scan_detection_counter)
             headers=["Index","Status","Port"]
             let_me_func.generate_csv("flag_header_detect", headers ,matrixData)
-            print(matrixData)
+            

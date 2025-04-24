@@ -24,19 +24,17 @@ def generate_csv(title, headers, data):
     then create a csv output based on datasource_time.csv
     '''
     
-    
     date = datetime.now()
     date = str(date)
     date = date.replace(" ", "_")
     filename = "./Data/{title}_{date}.csv".format(title=title, date=date)
-    data =str(data)
     
-    print(data)
-    with open(filename, 'w') as file:
-        writer = csv.writer(file)
-        writer.writerow(headers)
-        file.writelines(data)
-
+    
+    with open(filename, 'w', newline='') as f:
+        writer = csv.writer(f)
+        
+        writer.writerows(data)
+    
     print(f'CSV file "{filename}" created successfully.')
 
 
