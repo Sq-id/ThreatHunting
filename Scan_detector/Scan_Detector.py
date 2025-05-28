@@ -27,4 +27,7 @@ match mainMenu:
         secMenExec = "Signatures_Functions.%s()" % secondMenu
         exec(secMenExec)
     case "Host Based Signatures":
-        print(secondMenu)
+        secondMenu
+        secondMenu = secondMenu.replace(" ", "_")
+        secMenExec = "Signatures_Functions.%s()" % secondMenu
+        exec(secMenExec)
