@@ -2,7 +2,7 @@ import json
 from Funcs import let_me_func
 
 
-def tcp_udp_flag_header():
+'''def tcp_udp_flag_header():
         import pyshark
         tcp_pkt_to_stream_dict = {}
         udp_pkt_to_stream_dict = {}
@@ -99,7 +99,7 @@ def tcp_udp_flag_header():
                 let_me_func.generate_csv("flag_header_detect", headers,
                                          matrixData)
 
-
+'''
 def dissect_packets_by_stream():
         '''
         Completely dissects packets and organizes them by stream
@@ -195,7 +195,7 @@ def dissect_packets_by_stream():
         }
 
 
-def tcp_udp_flag_header_enhanced(dissected_data=None):
+def tcp_udp_flag_header(dissected_data=None):
         '''
         Enhanced version that can use pre-dissected packet data
         '''

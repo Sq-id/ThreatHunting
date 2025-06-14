@@ -3,7 +3,7 @@
     "Data_Points": ["TCP UDP Flag Headers", "rustscan", "snmpwalk"],
     "signatures": [
         {
-            "sig_type": "tcp udp flag header",
+            "sig_type": "dissect packets by stream",
             "sig_desc": "This will Parse PCAP Data scrubbing TCP/UDP Flag headers "
          },
         {
