@@ -98,25 +98,10 @@ def tcp_udp_flag_header():
                                          matrixData)
 
 
-def gather_disk_information():
-        import dfvfs
+def tcp_udp_flag_create_rule():
         '''
-        Here we wanna see what we can get out of a disk image and what may be useful to us.
-        -SAM & SYSTEM reginfo for secrets dump from NTLM > PASS
-        -Reg info
-        -Windows Autostart location
-        -
+        1. Take input from tcp_udp_flag_header func
+        2. Take streams that triggered positive detection
+        3. Create rules that block based on ip in positive stream
         '''
-        from dfvfs.lib import definitions
-        from dfvfs.path import factory
-        from dfvfs.resolver import resolver
 
-        location = input("Enter Disk Image Location: ")
-
-        os_path_spec = factory.Factory.NewPathSpec(definitions.TYPE_INDICATOR_OS, location=location)
-        qcow_path_spec = factory.Factory.NewPathSpec(definitions.TYPE_INDICATOR_QCOW, parent=os_path_spec)
-        tsk_partition_path_spec = factory.Factory.NewPathSpec(definitions.TYPE_INDICATOR_TSK_PARTITION, location='/p1', parent=qcow_path_spec)
-        tsk_path_spec = factory.Factory.NewPathSpec(definitions.TYPE_INDICATOR_TSK, location='/', parent=tsk_partition_path_spec)
-
-        file_entry = resolver.Resolver.OpenFileEntry(tsk_path_spec)
-        
