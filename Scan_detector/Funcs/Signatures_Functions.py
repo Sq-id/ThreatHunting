@@ -18,8 +18,8 @@ def tcp_udp_flag_header():
                 else:
                         return "0"
 
-        def gather_and_build_matrix(key, scans, port, length):
-                appendMe = [key, scans, port]
+        def gather_and_build_matrix(key, scans, port, src_ip, length):
+                appendMe = [key, scans, port, src_ip]
                 matrixData.append(appendMe)
 
         with open('./Signatures/tcp_flag_headers.json', 'r') as sig_file:
@@ -62,14 +62,15 @@ def tcp_udp_flag_header():
                         flag = pcap[val].tcp.flags
                         flag_str.append(flag)
                         port = pcap[int(temp_stream[0]) - 1].tcp.dstport
+                        src_ip = pcap[int(temp_stream[0]) - 1].ip.src
                         for scans in scan_flags_dict.keys():
                                 if flag_str == scan_flags_dict[scans]:
                                         print(
                                             str(scans) +
-                                            " Dectected in stream " + key)
+                                            " Detected in stream " + key + " from source IP: " + src_ip)
                                         scan_detection_counter = scan_detection_counter + 1
                                         gather_and_build_matrix(
-                                            key, scans, port, range(length))
+                                            key, scans, port, src_ip, range(length))
 
         for key in udp_pkt_to_stream_dict.keys():
                 pkts = udp_pkt_to_stream_dict[key]
@@ -80,20 +81,21 @@ def tcp_udp_flag_header():
                         flag = pcap[p].udp.stream
                         flag_str.append(flag)
                         port = pcap[int(temp_stream[0]) - 1].udp.dstport
+                        src_ip = pcap[int(temp_stream[0]) - 1].ip.src
                         for scans in scan_flags_dict.keys():
                                 if flag_str == scan_flags_dict[scans]:
                                         print(
                                             str(scans) +
-                                            " Dectected in stream " + key)
+                                            " Detected in stream " + key + " from source IP: " + src_ip)
                                         scan_detection_counter = scan_detection_counter + 1
                                         gather_and_build_matrix(
-                                            key, scans, port, range(length))
+                                            key, scans, port, src_ip, range(length))
 
         if scan_detection_counter == 0:
                 print("No Scans detected in PCAP :)")
         else:
                 print("Number of Scans detected:", scan_detection_counter)
-                headers = ["Index", "Status", "Port"]
+                headers = ["Index", "Status", "Port", "Source_IP"]
                 let_me_func.generate_csv("flag_header_detect", headers,
                                          matrixData)
 
