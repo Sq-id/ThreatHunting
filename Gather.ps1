@@ -34,25 +34,48 @@ $MainSelection = Read-Host "Select one"
 switch($MainSelection){
 
   '1'{
-      Write-host "Gathering Registry Data..." 
-            $RegCheckpoints = @("HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
+      Write-host "Gathering Registry Data..." -ForegroundColor $random
+            $RegCheckpoints=@("HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
             "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce","HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon","HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify",
             "HKLM:\SYSTEM\CurrentControlSet\Services","HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree","HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager",
             "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows","HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options")
       Foreach($RegCheckpoint in $RegCheckpoints){
-        
-
+        Get-Item $RegCheckpoint -ErrorAction SilentlyContinue
+        }
       
-      }
-      
+      write-host "Gathering scheduled tasks..." -ForegroundColor $random
+            $tasks=Get-ScheduledTask
+            $taskRes=
+            foreach($task in $tasks){
+                if(($task.Author -eq 'Microsoft Corporation') -or ($task.Author -eq 'Microsoft') -or ($task.Author -eq 'Mozilla') -or ($task.Author -eq 'Microsoft Corporation.')){
+                    $task | Out-Null
+                    }
+                else{
+                    [pscustomobject]@{
+                        TaskName=$task.TaskName
+                        Author=$task.Author
+                        Action=$task.actions.Execute
+                        Description=$task.Description
+                        Path=$task.Path}
+                
+                }
+            }
+            $taskRes
+      write-host "Checking Start-up folder..." -ForegroundColor $random
+        $usrDirs=Get-ChildItem C:\Users
+        $usrDirs=$usrDirs.Name
+        $startupFolder=@('C:\ProgramData\Microsoft\windows\Start Menu\Programs\StartUp')
+        foreach($usrDir in $usrDirs){
+            $startupFolder += "C:\Users\$usrDir\Appdata\Roaming\Microsoft\Start Menu\Programs\Startup"
+            
+        }
+        foreach($startup in $startupFolder){
+            Write-host "Checking $startup"
+            Get-ChildItem $startup -ErrorAction SilentlyContinue
+        }
 
-      
-      write-host "Gathering scheduled tasks..." 
-
-      write-host "Checking Start-up folder..."
-
-      write-host "Checking Powershell profiles..."
-      
+      write-host "Checking Powershell profiles..." -ForegroundColor $random
+            
   
       }
 
