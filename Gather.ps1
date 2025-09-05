@@ -49,6 +49,7 @@ switch($MainSelection){
             foreach($task in $tasks){
                 if(($task.Author -eq 'Microsoft Corporation') -or ($task.Author -eq 'Microsoft') -or ($task.Author -eq 'Mozilla') -or ($task.Author -eq 'Microsoft Corporation.')){
                     $task | Out-Null
+
                     }
                 else{
                     [pscustomobject]@{
@@ -63,40 +64,92 @@ switch($MainSelection){
             $taskRes
       write-host "Checking Start-up folder..." -ForegroundColor $random
         $usrDirs=Get-ChildItem C:\Users
-        $usrDirs=$usrDirs.Name
         $startupFolder=@('C:\ProgramData\Microsoft\windows\Start Menu\Programs\StartUp')
-        foreach($usrDir in $usrDirs){
-            $startupFolder += "C:\Users\$usrDir\Appdata\Roaming\Microsoft\Start Menu\Programs\Startup"
+        foreach($usrDir in $usrDirs.Name){
+            $startupFolder += "C:\Users\$usrDir\Appdata\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
             
         }
         foreach($startup in $startupFolder){
-            Write-host "Checking $startup"
+            Write-host "Checking $startup" -ForegroundColor $random
             Get-ChildItem $startup -ErrorAction SilentlyContinue
         }
 
       write-host "Checking Powershell profiles..." -ForegroundColor $random
+          $psprofiles=@($profile.AllUsersAllHosts,$profile.AllUsersCurrentHost,$profile.CurrentUserAllHosts,$profile.CurrentUserCurrentHost)
+          foreach($usrDir in $usrDirs){
+            $psprofiles+="C:\Users\$usrDir\Documents\WindowsPowerShell\Microsoft.PowerShellISE_profile.ps1"
+            $psprofiles+="C:\Users\$usrDir\Documents\WindowsPowerShell\profile.ps1"
+          }
+          $psprofiles=$psprofiles | Select-Object -Unique
+
+            foreach($psprof in $psprofiles){
+                $tmp_tp = Test-Path $psprof
+                
+                if($tmp_tp -eq $true){
+                    write-host "[+] PS Profile present at: $psprof" -ForegroundColor Red -ErrorAction SilentlyContinue
+                
+                }
+                else{
+                    write-host "[-] No PSProfile located at: $psprof" -ForegroundColor Cyan -ErrorAction SilentlyContinue
+                
+                }
             
-  
+            }
       }
 
   '2'{
-      Write-host "Listing Login Times for all users..." 
-      
-      write-host "Listing File Creation..." 
+      Write-host "Listing Login Times for all users..." -ForegroundColor $random
+        Write-host "Listing Local Logon information.." -ForegroundColor $random
+        $succLogins = Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4624} -ErrorAction SilentlyContinue
+        $failedLogins = @{LogName='Security';ProviderName='Microsoft-Windows-Security-Auditing';ID=4625 }
+        $ExplicitLogins = Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4648} -ErrorAction SilentlyContinue
+        
+        $failedresult = Get-WinEvent -FilterHashtable $failedLogins  | ForEach-Object {
+            $eventXml = ([xml]$_.ToXml()).Event
+            $userName = ($eventXml.EventData.Data | Where-Object { $_.Name -eq 'TargetUserName' }).'#text'
+            $computer = ($eventXml.EventData.Data | Where-Object { $_.Name -eq 'WorkstationName' }).'#text'
+    
+            [PSCustomObject]@{
+            Time     = [DateTime]$eventXml.System.TimeCreated.SystemTime
+            UserName = $userName
+            Computer = $computer
+             }
+            };$failedresult
 
-      write-host "Listing Process execution..."
+    
 
-      write-host "Listing Connections Made..."
+
+
+
+      write-host "Listing File Creation..." -ForegroundColor $random
+            
+      write-host "Listing Process execution..." -ForegroundColor $random
+
+      write-host "Listing Connections Made..." -ForegroundColor $random
   
       }
-  '3'{
-      Write-host "Listing Current Connections..." 
-      
-      write-host "Listing Current Users and Logged on users..." 
+  '3'{ 
 
-      write-host "Checking for recently made files..."
+      Write-Host "Listing Current Connections..." -ForegroundColor $random
+        $netConnections = Get-NetTCPConnection
+        $netConToProc = foreach ($netConnection in $netConnections) {
+        $process = Get-Process -Id $netConnection.OwningProcess
+        [pscustomobject]@{
+            LocalAddress = $netConnection.LocalAddress
+            LocalPort = $netConnection.LocalPort
+            RemoteAddress = $netConnection.RemoteAddress
+            State = $netConnection.State
+            OwningProcess = $process.Name
+            OwningProcessLocation = $process.Path
+            }
+        }
+        $netConToProc | Format-Table -AutoSize
 
-      write-host "Checking For ..."
+      write-host "Listing Current Users and Logged on users..." -ForegroundColor $random
+            Get-WmiObject -Class Win32_ComputerSystem | Select-Object UserName
+      write-host "Checking for Non-Signed executables and Drivers" -ForegroundColor $random
+        
+      write-host "Checking For ..." -ForegroundColor $random
       
   
       }
