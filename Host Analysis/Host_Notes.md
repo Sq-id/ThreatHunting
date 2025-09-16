@@ -1,5 +1,5 @@
 # **<ins>Host Analysis Notes</ins>**
-
+<details>
     [] Methodology
     [] Windows
         [] Detecting initial access
@@ -16,6 +16,7 @@
         [] Detecting Communication
         [] Detecting PrivEsc
         [] Detecting Exfiltration
+</details>
 ----------------------------------------------------------------------------
 ## **<ins>General Methodology</ins>**
 
