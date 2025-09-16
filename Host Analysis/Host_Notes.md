@@ -66,6 +66,26 @@ When Tracking down Processes the information i like to gather is below
 
 
 <ins>One-liners</ins>
+
+>Powershell to list all processes spawned and display by quantity
+
+```
+$result = Get-WinEvent -FilterHashtable @{LogName="Security";Id=4688;StartTime = (Get-Date).AddDays(-7)} | ForEach-Object {
+    $eventXml = ([xml]$_.ToXml()).Event
+    $evt = [ordered]@{
+        EventDate = [DateTime]$eventXml.System.TimeCreated.SystemTime
+        Computer  = $eventXml.System.Computer
+    }
+    $eventXml.EventData.ChildNodes | ForEach-Object { $evt[$_.Name] = $_.'#text' }
+    [PsCustomObject]$evt
+}
+$cmdCount = @()
+Foreach($res in $result.CommandLine){
+    $cmdCount += $res
+}
+$cmdCount | Sort-Object -Descending
+```
+
 >Powershell to filter windows process creation for powershell instences running
 ```
 Get-WinEvent -FilterHashtable @{
