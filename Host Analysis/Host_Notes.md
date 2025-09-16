@@ -31,10 +31,11 @@ Audit Policies
 
 ```
 [] 1. Launch Secpol.msc
-[] 2. Local Policies > Audit Policies
-[] 3. 
+[] 2. Local Policies > Audit Policies > enable auditing on all items
+[] 3. Advanced Audit Policy Configuration > enable Auditing on all items
 ```
     
+
 
 ### **Detecting initial access**
 
