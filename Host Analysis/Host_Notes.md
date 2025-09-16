@@ -74,7 +74,7 @@ When Tracking down Processes the information i like to gather is below
 
 <ins>Detect Me's</ins>
 
->Powershell to list all processes spawned and display by quantity
+>Powershell to list all processes spawned and display unique Cmdline Args ran
 
 ```
 $result = Get-WinEvent -FilterHashtable @{LogName="Security";Id=4688;StartTime = (Get-Date).AddDays(-7)} | ForEach-Object {
@@ -90,7 +90,7 @@ $cmdCount = @()
 Foreach($res in $result.CommandLine){
     $cmdCount += $res
 }
-$cmdCount | Sort-Object -Descending
+$cmdCount | Sort-Object -unique
 ```
 
 >Powershell to filter windows process creation for powershell instences running
