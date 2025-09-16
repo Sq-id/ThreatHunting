@@ -35,6 +35,23 @@ Audit Policies
 [] 3. Advanced Audit Policy Configuration > enable Auditing on all items
 ```
     
+Process Visibility
+>Increasing Process visability and enabling Process creation events to be recorded will allow for tracking of process creation and aid in the detection of TA activity.
+
+```
+[] 1. Launch Secpol.msc
+[] 2. Security Settings > Advanced Audit Policy Configuration > System Audit Policies - Local Group Policy Object > Detailed Tracking.
+[] 3. Audit Process Creation > Properties
+[] 4. Select Config box, select Success, select Failure.
+```
+
+### **Detecting Process Creation**
+```
+Event Log / Name / Event ID
+---------------------------------
+Security / Process Creation / 4688
+
+```
 
 
 ### **Detecting initial access**
