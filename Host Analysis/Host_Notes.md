@@ -1,4 +1,4 @@
-# **Host Analysis notes**
+# **<ins>Host Analysis Notes</ins>**
 
     [] Methodology
     [] Windows
@@ -17,13 +17,13 @@
         [] Detecting PrivEsc
         [] Detecting Exfiltration
 ----------------------------------------------------------------------------
-## **General Methodology**
+## **<ins>General Methodology</ins>**
 
 
 
 
 ----------------------------------------------------------------------------
-## **Windows Host Analysis**
+## **<ins>Windows Host Analysis</ins>**
 ### **Detecting initial access**
 
 ### **Detecting Persistence**
@@ -38,7 +38,8 @@
 
 
 ----------------------------------------------------------------------------
-## **Linux Host Analysis**
+## **<ins>Linux Host Analysis</ins>**
+
 ### **Detecting initial access**
         
 ### **Detecting Persistence**
