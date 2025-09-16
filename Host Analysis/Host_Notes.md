@@ -1,5 +1,6 @@
 # **<ins>Host Analysis Notes</ins>**
 <details>
+
     [] Methodology
     [] Windows
         [] Detecting initial access
@@ -20,6 +21,7 @@
 
 ----------------------------------------------------------------------------
 ## **<ins>General Methodology</ins>**
+
 <details>
 
 
@@ -27,6 +29,7 @@
 
 ----------------------------------------------------------------------------
 ## **<ins>Windows Host Analysis</ins>**
+
 <details>
 
 ### **Increasing Visablilty and Host Logging**
