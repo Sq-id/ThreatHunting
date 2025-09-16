@@ -20,12 +20,14 @@
 
 ----------------------------------------------------------------------------
 ## **<ins>General Methodology</ins>**
+<details>
 
 
-
+</details>
 
 ----------------------------------------------------------------------------
 ## **<ins>Windows Host Analysis</ins>**
+<details>
 
 ### **Increasing Visablilty and Host Logging**
 Audit Policies
@@ -113,8 +115,12 @@ Get-WinEvent -FilterHashtable @{
 ### **Detecting Exfiltration**
 
 
+</details>
+
 ----------------------------------------------------------------------------
 ## **<ins>Linux Host Analysis</ins>**
+
+<details>
 
 ### **Detecting initial access**
         
@@ -128,5 +134,6 @@ Get-WinEvent -FilterHashtable @{
     
 ### **Detecting Exfiltration**
 
+</details>
 
 ----------------------------------------------------------------------------
