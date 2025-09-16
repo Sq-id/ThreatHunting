@@ -17,6 +17,7 @@
         [] Detecting PrivEsc
         [] Detecting Exfiltration
 </details>
+
 ----------------------------------------------------------------------------
 ## **<ins>General Methodology</ins>**
 
