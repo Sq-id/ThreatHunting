@@ -39,14 +39,14 @@
 
 
 ## **Linux Host Analysis**
-    ### **Detecting initial access**
+### **Detecting initial access**
         
-    ### **Detecting Persistence**
+### **Detecting Persistence**
     
-    ### **Detecting Lateral Movement**
+### **Detecting Lateral Movement**
+   
+### **Detecting Communication**
     
-    ### **Detecting Communication**
+### **Detecting PrivEsc**
     
-    ### **Detecting PrivEsc**
-    
-    ### **Detecting Exfiltration**
+### **Detecting Exfiltration**
