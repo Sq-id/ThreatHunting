@@ -65,7 +65,7 @@ When Tracking down Processes the information i like to gather is below
 
 
 
-<ins>One-liners</ins>
+<ins>Detect Me's</ins>
 
 >Powershell to list all processes spawned and display by quantity
 
