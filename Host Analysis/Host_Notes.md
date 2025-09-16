@@ -45,13 +45,37 @@ Process Visibility
 [] 4. Select Config box, select Success, select Failure.
 ```
 
-### **Detecting Process Creation**
+### **Tracking Processes**
 ```
 Event Log / Name / Event ID
 ---------------------------------
 Security / Process Creation / 4688
 
 ```
+When Tracking down Processes the information i like to gather is below
+
+```
+[] 1. Who ran it:
+[] 2. When did it run:
+[] 3. What permissions did it run as:
+[] 4. Where did it run From:
+[] 5. What did it do:
+```
+
+
+
+
+<ins>One-liners</ins>
+>Powershell to filter windows process creation for powershell instences running
+```
+Get-WinEvent -FilterHashtable @{
+    LogName = 'Security'
+    Id = 4688
+    StartTime = (Get-Date).AddDays(-7)
+} | Select TimeCreated,Id,Message -ExpandProperty Message | Select-String powershell
+```
+
+
 
 
 ### **Detecting initial access**
