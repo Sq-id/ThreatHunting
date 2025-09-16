@@ -16,13 +16,13 @@
         [] Detecting Communication
         [] Detecting PrivEsc
         [] Detecting Exfiltration
-
+----------------------------------------------------------------------------
 ## **General Methodology**
 
 
 
 
-
+----------------------------------------------------------------------------
 ## **Windows Host Analysis**
 ### **Detecting initial access**
 
@@ -37,7 +37,7 @@
 ### **Detecting Exfiltration**
 
 
-
+----------------------------------------------------------------------------
 ## **Linux Host Analysis**
 ### **Detecting initial access**
         
@@ -50,3 +50,6 @@
 ### **Detecting PrivEsc**
     
 ### **Detecting Exfiltration**
+
+
+----------------------------------------------------------------------------
