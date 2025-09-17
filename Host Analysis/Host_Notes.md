@@ -279,8 +279,31 @@ When analyzing these we can just seach thru them and look for things like user c
 ---------------------------------------------------------------------------------------------
 **<ins>Services</ins>**
 
+The Reason services are ideal for attackers is for the fact they boot on startup and give you pretty granular control over longterm cover inside of a machine. Services are located inside the ```/etc/systemd/system/``` directory. To provide an example of how services can be used please see below
 
+> Below is a sample service file
+```
+[Unit]
+Description=Backup Manager
+After=network.target
 
+[Service]
+ExecStart=/home/TA/.sus_proc
+Restart=on-failure
+User=nobody
+Group=nogroup
+
+[Install]
+WantedBy=multi-user.target
+```
+
+above we can see a service file where on startup this badboy will kick off and launch a file from the TA's home directory. this file really can contain anything like a check to validte C2 beacon, backdoor acounts still active, a method of data exfil. so this is a really nice way to stay on target. the biggest downside to it is the fact its metioned here, to well known. None the less still a easy thing to check for 
+
+>Example of how to pull every service file and grep the ExecStart locations
+```
+sudo cat /etc/systemd/system/* | grep ExecStart
+```
+This will give you some insight into what is being called and typically what sticks out is whats wrong.
 
 ---------------------------------------------------------------------------------------------
 
