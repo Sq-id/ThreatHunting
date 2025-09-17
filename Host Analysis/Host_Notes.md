@@ -102,7 +102,16 @@ Get-WinEvent -FilterHashtable @{
 } | Select TimeCreated,Id,Message -ExpandProperty Message | Select-String powershell
 ```
 
+### **Detecting account manipulation**
+```
+Event Log / Name / Event ID / Scope
+--------------------------------------------------
+Security / Account Logon Faliure / 4625 / Local
+Security / Account Logon Success / 4624 / Local
 
+
+
+``` 
 
 
 ### **Detecting initial access**
@@ -117,6 +126,51 @@ Get-WinEvent -FilterHashtable @{
     
 ### **Detecting Exfiltration**
 
+### **Detecting Indicator Removal**
+
+Detecting TA Actions to cover their tracks
+
+```
+Event Log / Name / Event ID / Scope
+---------------------------------------------------------
+Security / Security Event Log is Cleared / 1102 / Domain
+
+
+
+``` 
+
+
+Attackers will clear event logs to decrease the visabliity into actions they preformed.
+Below are some methods to do it and may help in identification of these actions
+
+Logs are stored on disk at the following location
+```
+C:\windows\System32\winevt\logs\
+```
+that being said the first method you could use if permissions allow is to straight delete that directory.
+
+other cmdline and powershell methods to do so are listed below
+
+>cmd
+
+```
+wevtutil cl system
+wevtutil cl security
+wevtutil cl application
+
+```
+
+
+<ins>Detect Me's</ins>
+
+> Check to see if event logs where cleared.
+```
+Get-WinEvent -FilterHashtable @{
+    LogName = 'Security'
+    Id = 1102
+    StartTime = (Get-Date).AddDays(-7)
+}
+```
 
 </details>
 
