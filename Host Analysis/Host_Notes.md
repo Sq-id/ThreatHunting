@@ -176,8 +176,41 @@ Get-WinEvent -FilterHashtable @{
 
 ----------------------------------------------------------------------------
 ## **<ins>Linux Host Analysis</ins>**
+With linux searching for TA activity luckily can be pretty cut and dry if you have the right commands. Luckily ive listed them below
 
 <details>
+
+### **Locating Processes and Network Connections**
+
+>List all running processes
+
+```
+ps aux
+```
+
+>List all running processes running as a specific user
+
+```
+ps aux | grep root
+```
+
+Lets say we have a process we beleive is planted by the TA. We can start our investigation by using the ```lsof``` command this will give a list of all open files and can be provided the pid of the process we currently have in question
+
+```
+lsof -p 12345
+```
+
+After analyzing our output here we can now start looking into if network connections are made. in all honesty id really start here. if you can start by using internal to external network connections as a base list to start your querys on then its probably a fair bet since attackers need external to internal connection. This can also reveal more information like what ports are being used, is it a common port? does the port appear to change over time? how often is the process calling back? these are all things we should be able to discover from running and analyzing the below command
+
+```
+lsof -i -P -n
+```
+
+Looking at our output we can run through a list to help decide whats wonky and whats normal external connection. We can further widdle this list down by checking to see if the list we have has any known IP addresses in it (e.g IP associated to a package manager). If we where able to narrow that down now we can start looking into src and dest ports in use. Does this pairing make sense? do we have a high port to 443? might be indicative of a C2 plant. do we standard protocols being used over non traditional ports they are assigned?
+
+
+
+
 
 ### **Detecting initial access**
         
