@@ -215,7 +215,45 @@ Looking at our output we can run through a list to help decide whats wonky and w
 ### **Detecting initial access**
         
 ### **Detecting Persistence**
-    
+
+When detecting persistence on linux its layed out in a great way to create a running bash script to do it. Since linux everything is a file and persistence typically takes avantage of file reference and execution of contents we can make alil enumeration script to help us do this. first we need to understand common locations and what we want to grab out of them. 
+
+>Common Persistence in linux
+
+```
+[] 1. Account Creation
+[] 2. Cron Jobs
+[] 3. 
+```
+---------------------------------------------------------------------------------------------
+<ins>Account Creation</ins>
+When looking into account creation we can look into to the  ``` /var/log ``` directory
+this directoy houses the  ``` /var/log/auth.log ``` file and from here we can grep for ```useradd``` or ```passwd``` commands run to check for account creation and minipulation
+
+> checking for Account Creation
+```
+sudo cat /var/log/auth.log | grep useradd
+```
+
+>checking for Account Modification
+```
+sudo cat /var/log/auth.log | grep usermod
+```
+```
+sudo cat /var/log/auth.log | grep useradd
+```
+```
+sudo cat /var/log/auth.log | grep passwd
+```
+
+Next we can start seeing what shell this user logs in with
+
+>checking spawn shell
+```
+sudo cat /etc/passwd
+```
+
+
 ### **Detecting Lateral Movement**
    
 ### **Detecting Communication**
