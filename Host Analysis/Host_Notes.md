@@ -212,10 +212,12 @@ Looking at our output we can run through a list to help decide whats wonky and w
 
 
 ---------------------------------------------------------------------------------------------
+
 ### **Detecting initial access**
 
 
 ---------------------------------------------------------------------------------------------   
+
 ### **Detecting Persistence**
 
 When detecting persistence on linux its layed out in a great way to create a running bash script to do it. Since linux everything is a file and persistence typically takes avantage of file reference and execution of contents we can make alil enumeration script to help us do this. first we need to understand common locations and what we want to grab out of them. 
@@ -261,20 +263,26 @@ sudo cat /etc/passwd
 
 
 ---------------------------------------------------------------------------------------------
+
 ### **Detecting Lateral Movement**
 
 
 
- ---------------------------------------------------------------------------------------------  
+----------------------------------------------------------------------------------------------  
+
 ### **Detecting Communication**
 
 
+
 -----------------------------------------------------------------------------------------------
+
 ### **Detecting PrivEsc**
 
 
 -----------------------------------------------------------------------------------------------
+
 ### **Detecting Exfiltration**
+
 -----------------------------------------------------------------------------------------------
 
 </details>
