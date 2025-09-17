@@ -180,6 +180,7 @@ With linux searching for TA activity luckily can be pretty cut and dry if you ha
 
 <details>
 ---------------------------------------------------------------------------------------------
+
 ### **Locating Processes and Network Connections**
 
 >List all running processes
