@@ -264,11 +264,11 @@ Cron Jobs are pretty much the same as task scheduler in windows. these will run 
 
 >Location of Crontabs
 ```
-**User Crontabs:**
+User Crontabs:
 /var/spool/cron/
 /var/spool/cron/crontabs
 
-**System-wide Crontabs:**
+System-wide Crontabs:
 /etc/crontab
 /etc/cron.d
 
