@@ -274,6 +274,12 @@ System-wide Crontabs:
 
 ```
 
+When analyzing these we can just seach thru them and look for things like user cron jobs pointing to scripts in user dir's where we can then do some further reading on the script to see whats up.
+
+---------------------------------------------------------------------------------------------
+**<ins>Services</ins>**
+
+
 
 
 ---------------------------------------------------------------------------------------------
