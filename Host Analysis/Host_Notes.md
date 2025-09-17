@@ -179,7 +179,6 @@ Get-WinEvent -FilterHashtable @{
 With linux searching for TA activity luckily can be pretty cut and dry if you have the right commands. Luckily ive listed them below.
 
 <details>
----------------------------------------------------------------------------------------------
 
 ### **Locating Processes and Network Connections**
 
@@ -228,7 +227,7 @@ When detecting persistence on linux its layed out in a great way to create a run
 ```
 [] 1. Account Creation
 [] 2. Cron Jobs
-[] 3. 
+[] 3. Services
 ```
 ---------------------------------------------------------------------------------------------
 **<ins>Account Creation</ins>**
@@ -260,6 +259,20 @@ sudo cat /etc/passwd
 ```
 ---------------------------------------------------------------------------------------------
 **<ins>Cron Jobs</ins>**
+
+Cron Jobs are pretty much the same as task scheduler in windows. these will run jobs on time based increment. these jobs can run commands or scripts that are referenced within the file.
+
+>Location of Crontabs
+```
+**User Crontabs:**
+/var/spool/cron/
+/var/spool/cron/crontabs
+
+**System-wide Crontabs:**
+/etc/crontab
+/etc/cron.d
+
+```
 
 
 
