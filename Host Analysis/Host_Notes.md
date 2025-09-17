@@ -305,6 +305,18 @@ sudo cat /etc/systemd/system/* | grep ExecStart
 ```
 This will give you some insight into what is being called and typically what sticks out is whats wrong.
 
+Additional to this there are a few log locations we can check to see details of when/how its running
+
+>syslogs
+```
+cat /var/log/syslog | grep .sus_proc
+```
+>journalctl
+```
+sudo journalctl -u .sus_proc
+```
+
+
 ---------------------------------------------------------------------------------------------
 
 ### **Detecting Lateral Movement**
