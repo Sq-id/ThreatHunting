@@ -176,7 +176,7 @@ Get-WinEvent -FilterHashtable @{
 
 ----------------------------------------------------------------------------
 ## **<ins>Linux Host Analysis</ins>**
-With linux searching for TA activity luckily can be pretty cut and dry if you have the right commands. Luckily ive listed them below
+With linux searching for TA activity luckily can be pretty cut and dry if you have the right commands. Luckily ive listed them below.
 
 <details>
 
@@ -226,7 +226,8 @@ When detecting persistence on linux its layed out in a great way to create a run
 [] 3. 
 ```
 ---------------------------------------------------------------------------------------------
-<ins>Account Creation</ins>
+**<ins>Account Creation</ins>**
+
 When looking into account creation we can look into to the  ``` /var/log ``` directory
 this directoy houses the  ``` /var/log/auth.log ``` file and from here we can grep for ```useradd``` or ```passwd``` commands run to check for account creation and minipulation
 
@@ -252,6 +253,8 @@ Next we can start seeing what shell this user logs in with
 ```
 sudo cat /etc/passwd
 ```
+---------------------------------------------------------------------------------------------
+**<ins>Cron Jobs</ins>**
 
 
 ### **Detecting Lateral Movement**
