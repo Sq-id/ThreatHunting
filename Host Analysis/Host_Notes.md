@@ -179,7 +179,7 @@ Get-WinEvent -FilterHashtable @{
 With linux searching for TA activity luckily can be pretty cut and dry if you have the right commands. Luckily ive listed them below.
 
 <details>
-
+---------------------------------------------------------------------------------------------
 ### **Locating Processes and Network Connections**
 
 >List all running processes
@@ -211,9 +211,11 @@ Looking at our output we can run through a list to help decide whats wonky and w
 
 
 
-
+---------------------------------------------------------------------------------------------
 ### **Detecting initial access**
-        
+
+
+---------------------------------------------------------------------------------------------   
 ### **Detecting Persistence**
 
 When detecting persistence on linux its layed out in a great way to create a running bash script to do it. Since linux everything is a file and persistence typically takes avantage of file reference and execution of contents we can make alil enumeration script to help us do this. first we need to understand common locations and what we want to grab out of them. 
@@ -257,13 +259,23 @@ sudo cat /etc/passwd
 **<ins>Cron Jobs</ins>**
 
 
+
+---------------------------------------------------------------------------------------------
 ### **Detecting Lateral Movement**
-   
+
+
+
+ ---------------------------------------------------------------------------------------------  
 ### **Detecting Communication**
-    
+
+
+-----------------------------------------------------------------------------------------------
 ### **Detecting PrivEsc**
-    
+
+
+-----------------------------------------------------------------------------------------------
 ### **Detecting Exfiltration**
+-----------------------------------------------------------------------------------------------
 
 </details>
 
