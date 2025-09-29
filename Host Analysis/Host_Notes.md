@@ -337,6 +337,7 @@ sudo journalctl -u .sus_proc
 with building a process tree out on a suspected file well want to follow the ppid of the process all the way up to pid 1
 
 ```
+
 1. ausearch -i -x "<Command/file/text thats sus here>"
 2. next record the starting location pid and the ppid
 3. ausearch -i --pid <put previous pid here> 
