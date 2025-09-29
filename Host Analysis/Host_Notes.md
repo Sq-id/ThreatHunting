@@ -219,7 +219,17 @@ With linux, the primary reason to have this server in the first place is most li
 host a service for other systems. 
 
 <ins>Web IA</ins>
-With web as a initial access
+With web as a initial access we first gotta know what service is installed as a web service.
+
+We can look in the logging to see whats available.
+
+```/var/log/```
+
+if we start seeing things like ```/var/log/nginx``` or ```/var/log/apache2``` we should prob check there.
+
+
+On that note. how do we detect funky traffic in these logs?
+
 
 ---------------------------------------------------------------------------------------------   
 
@@ -321,6 +331,20 @@ cat /var/log/syslog | grep .sus_proc
 sudo journalctl -u .sus_proc
 ```
 
+
+**<ins>Building a process tree</ins>**
+
+with building a process tree out on a suspected file well want to follow the ppid of the process all the way up to pid 1
+
+```
+1. ausearch -i -x "<Command/file/text thats sus here>"
+2. next record the starting location pid and the ppid
+3. ausearch -i --pid <put previous pid here> 
+4. record actions taken by the newly analyzed pid and the ppid
+5. auseach -i --pid <new pid>
+6. repeat.
+
+```
 
 ---------------------------------------------------------------------------------------------
 
