@@ -105,13 +105,13 @@ Get-WinEvent -FilterHashtable @{
 ### **Detecting account manipulation**
 ```
 Event Log / Name / Event ID / Scope
---------------------------------------------------
+-----------------------------------------------
 Security / Account Logon Faliure / 4625 / Local
 Security / Account Logon Success / 4624 / Local
 
 
 
-``` 
+```
 
 
 ### **Detecting initial access**
@@ -215,6 +215,11 @@ Looking at our output we can run through a list to help decide whats wonky and w
 
 ### **Detecting initial access**
 
+With linux, the primary reason to have this server in the first place is most likely to
+host a service for other systems. 
+
+<ins>Web IA</ins>
+With web as a initial access
 
 ---------------------------------------------------------------------------------------------   
 
