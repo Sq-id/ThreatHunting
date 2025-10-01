@@ -471,6 +471,17 @@ If you detect any of the following, capturing a mem_image is probably worth it:
 
 '''
 
+**<ins>Capturing memory on linux</ins>**
+
+full memory capture with **'''LiME'''**:
+
+'''
+[] 
+
+
+'''
+
+
 
 -----------------------------------------------------------------------------------------------
 </details>
