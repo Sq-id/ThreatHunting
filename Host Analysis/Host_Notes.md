@@ -370,6 +370,62 @@ with building a process tree out on a suspected file well want to follow the ppi
 
 -----------------------------------------------------------------------------------------------
 
+### **Memory Analysis**
+
+The Goals with memory analysis is to capture the data that's lifetime is often very short. if captured when compromise is suspected then we can look into the specifics of what is occuring and give a deeper look into what the attacker may have achived.
+
+
+**<ins>Volatile memory</ins>**
+Volatile memory is anything that is not preserved after system restart/powerloss/ service restart. In addition to this memory has a hierarchy to what is preserved first and what is instantly over written.
+
+```
+CPU Registers
+    |
+    V
+CPU Cache
+    |
+    V
+RAM
+    |
+    V
+Disk Storage
+
+```
+
+When Going through volatile memory analysis, specifically on RAM this is divided up inbetween two spaces. kernal space and user space.
+
+User Space consists of process launched by the user or applications. each space is seperate to be protected from others.
+
+kernal space is a reserve for the OS and low-level services that will manage resources like drivers and memory access.
+
+**<ins>Collection Objectives/Focus of analysis</ins>**
+
+there are diffrent types of memory dumps and basically just detail how verbose they are. we have '''Full Memory Dump''','''Process Dump''', and '''PageFile And Swap Analysis'''. in some cases you can also parse the systems hibernation file '''hiberfil.sys''' to extract RAM Contents. On linux the best tool to capture a memory image is
+'''LiME (Linux Memory Extractor)'''
+
+When Collecting a memory image where going to make sure we want to collect the following:
+
+```
+[] Running Processes
+[] Open Network connections and ports
+[] Logged-in users and recent commands
+[] decrypted content, including encryption keys
+[] injected code or fileless malware
+```
+
+Now the question arises, what should we look for in memory?
+
+'''
+[] Suspicious or malicious processes that are running without a corresponding file on disk
+[] DLL injection where malicious code is injected into memory space of a legit process
+[] process hollowing and the mem space that is replaces with malicious code
+[] API hooking and the interception of a normal function call
+[] rootkits in a kernel level space where 
+
+'''
+
+
+-----------------------------------------------------------------------------------------------
 </details>
 
-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------
