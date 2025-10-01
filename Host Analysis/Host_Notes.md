@@ -172,6 +172,38 @@ Get-WinEvent -FilterHashtable @{
 }
 ```
 
+
+### **Windows Memory Analysis**
+
+**<ins>Capturing a full memory dump</ins>**
+
+'''
+[] Open FTK
+[] File > Capture memory 
+[] pick outpath and name
+[] after capture open powershell
+[] get-filehash -algorithm md5 .\memdump.mem
+'''
+
+**<ins>Capturing a process memory dump</ins>**
+
+using procdump64:
+
+'''
+[] Open Powershell
+[] .\procdump64.exe -ma lsass.exe C:\Dir\to\Save -accepteula
+[] get-filehash -algorithm md5 C:\dir\to\save\proc.dmp
+'''
+
+**<ins>Capturing a Crash dump</ins>**
+
+'''
+[] win + r > sysdm.cpl 
+[] Advanced tab > settings > startup and recovery
+[] configure mem dump in system faliure > write debugging information > Active Memory Dump
+'''
+
+
 </details>
 
 ----------------------------------------------------------------------------
@@ -421,6 +453,21 @@ Now the question arises, what should we look for in memory?
 [] process hollowing and the mem space that is replaces with malicious code
 [] API hooking and the interception of a normal function call
 [] rootkits in a kernel level space where 
+
+'''
+
+Timing on capture is obviously very important.
+
+If you detect any of the following, capturing a mem_image is probably worth it:
+
+'''
+[] Lateral Movement
+    -If we start detecting lateral movement we can look into   what processes are running and what cmdline args have been ran to get a good timeline. this will also expose what credentials have been used and what account to monitor more.
+
+[] Fileless/In-Memory Malware
+    this type of activity will give us a look into the processes housing the beacons, we can gather C2 Addresses and if it is an interperted language like PS/VBS/Bash we can see whats ran in plaintext
+[] Evidence Destruction
+    This will also reveal a timeline for us, focusing on what cmdline args where ran and what was deleted/ the method of deletion.
 
 '''
 
