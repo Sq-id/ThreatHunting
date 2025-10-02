@@ -204,6 +204,13 @@ using procdump64:
 '''
 
 
+**<ins>Analysis with Volitility3</ins>**
+
+First we will need to load up the correct profile
+
+'''vol -f .\mem.mem indows.info'''
+
+
 </details>
 
 ----------------------------------------------------------------------------
@@ -475,11 +482,22 @@ If you detect any of the following, capturing a mem_image is probably worth it:
 
 full memory capture with **'''LiME'''**:
 
+first we need to ensure LiME is installed
+'''git clone https://github.com/504ensicsLabs/LiME.git'''
+
 '''
 [] 
 
 
 '''
+
+
+
+**<ins>Analysis with Volitility3</ins>**
+
+First we will need to load up the correct profile
+
+'''vol -f .\mem.mem banners.Banners'''
 
 
 
