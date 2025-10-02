@@ -206,9 +206,71 @@ using procdump64:
 
 **<ins>Analysis with Volitility3</ins>**
 
+Below is a checklist we can fill out as we go thru these steps to build a case on intrusions we find
+
+**Vol Checklist**
+
+'''
+[] Grab Open Network Connections
+    [] What are the open connections to out of the network?
+    [] What are the open connections to other hosts on the network and do they make sense?
+    [] Are there any non-windows binaries running creating connections out?
+    
+[] Grab the Process tree list
+    [] Are there any non-windows binaries running?
+    [] Are these non-windows binaries running from a user or tmp directory?
+    [] What is the virtual memory address and PID of the process in question?
+
+[] Grap File's in question
+    [] from the information above are we finding any active files we can dig into?
+    [] what is the hash of the file in question? 
+    [] check virustotal for hash
+'''
+
+
+
+
 First we will need to load up the correct profile
 
-'''vol -f .\mem.mem indows.info'''
+'''vol -f .\mem.mem windows.info'''
+
+From here we can start gatheing information on running Proccesses and open network connections
+
+Listing Open network connections:
+
+''' vol -f .\memory.dmp windows.netstat '''
+            ** Then **
+''' vol -f .\memory.dmp windows.netscan.NetScan '''
+
+from here we can look at the ouput for non native windows binaries as a first check, deffinity want to pay attention to spelling for trying to hide in easy typos
+
+after this we can start looking at proccesses running 
+
+''' vol -f .\memory.dmp windows.pslist '''
+
+            **Then**
+
+''' vol -f .\memory.dmp windows.pstree '''
+
+here we can start seeing the processes running that may also be connected to the netconnections, additionally were going to want to check and see where the binaries are running from.
+
+from here we can start seeing what files we may have to dig into more.
+in order to dig into a file we need its PID and virtual address so from the above process list we can pick thoes out and use them to provide as flags.
+
+''' vol -f .\memory.dmp windows.dumpfiles --pid 4628 --virtaddr 0xca82b85325a0 '''
+
+once we have the file lets grab the hash and provide that to virustotal as a quick check
+
+'''get-filehash -algorithm SHA1 .\file_sus.exe'''
+
+Now that we have the file lets start looking into what actions on objective where taken
+
+To do this we can pull the cmdline histroy
+
+'''vol -f .\memory.dmp windows.cmdline'''
+
+from this we can use that previous PID to see what was ran when the processes started up.
+
 
 
 </details>
@@ -497,8 +559,92 @@ first we need to ensure LiME is installed
 
 First we will need to load up the correct profile
 
-'''vol -f .\mem.mem banners.Banners'''
+'''vol -f .\mem.mem banners'''
 
+With in our '''volatility3\framework\constants\__init__.py''' file we need to replace the following '''REMOTE_ISF_URL = "https://raw.githubusercontent.com/leludo84/vol3-linux-profiles/main/banners-isf.json"'''
+
+now that thats out the way...
+
+**grabing bash history:**
+
+'''
+vol -f .\dump.mem linux.bash.Bash
+'''
+
+**Grabbing the hosts interfaces and addr's:**
+
+'''
+vol -f .\dump.mem linux.ip.Addr
+'''
+
+**Listing all open processes:**
+
+'''
+vol -f .\dump.mem linux.pslist.PsList
+'''
+
+**grabbing open files in processes:**
+
+'''
+vol -f .\dump.mem linux.lsof.Lsof
+'''
+
+**grabbing Open network connections and nethooks:**
+
+'''
+vol -f .\dump.mem linux.sockstat
+'''
+    **And**
+'''
+vol -f .\dump.mem linux.netfilter
+'''
+
+
+**here is a list of all the common linux vol commands**
+
+'''
+banners.Banners     Attempts to identify potential Linux banners in memory.
+linux.bash.Bash     Recovers bash command history.
+linux.boottime.Boottime  Retrieves system boot time.
+linux.capabilities.Capabilities  Lists process capabilities.
+linux.check_afinfo.Check_afinfo  Checks network address family information.
+linux.check_creds.Check_creds  Identifies credential discrepancies.
+linux.check_idt.Check_idt  Examines the interrupt descriptor table.
+linux.check_modules.Check_modules  Lists kernel modules.
+linux.check_syscall.Check_syscall  Checks syscall table integrity.
+linux.ebpf.EBPF  Enumerates eBPF programs.
+linux.elfs.Elfs  Lists ELF binaries mapped in memory.
+linux.envars.Envars  Displays process environment variables.
+linux.graphics.fbdev.Fbdev  Retrieves framebuffer device information.
+linux.hidden_modules.Hidden_modules  Detects hidden kernel modules.
+linux.iomem.IOMem  Retrieves memory map similar to /proc/iomem.
+linux.kallsyms.Kallsyms  Extracts kernel symbol addresses.
+linux.keyboard_notifiers.Keyboard_notifiers  Lists keyboard notifiers.
+linux.kmsg.Kmsg  Reads the kernel log buffer.
+linux.kthreads.Kthreads  Lists kernel threads.
+linux.library_list.LibraryList  Enumerates shared libraries.
+linux.lsmod.Lsmod  Lists loaded kernel modules.
+linux.lsof.Lsof  Lists open files per process.
+linux.malfind.Malfind  Scans for suspicious memory regions.
+linux.modxview.Modxview  Detects kernel rootkits by module discrepancies.
+linux.mountinfo.MountInfo  Retrieves mounted file system details.
+linux.netfilter.Netfilter  Inspects netfilter hooks.
+linux.pagecache.Files  Examines file-backed memory pages.
+linux.pagecache.InodePages  Lists inode-associated memory pages.
+linux.pidhashtable.PIDHashTable  Scans for hidden processes.
+linux.proc.Maps  Displays memory maps of all processes.
+linux.psaux.PsAux  Lists processes with command-line arguments.
+linux.pscallstack.PsCallStack  Extracts kernel stack traces for processes.
+linux.pslist.PsList  Lists active processes.
+linux.psscan.PsScan  Scans for residual process structures.
+linux.pstree.PsTree  Displays process hierarchy.
+linux.ptrace.Ptrace  Lists processes with ptrace attachments.
+linux.sockstat.Sockstat  Retrieves socket statistics.
+linux.tty_check.tty_check  Checks for attached terminals.
+linux.vmaregexscan.VmaRegExScan  Scans memory using regular expressions.
+linux.vmayarascan.VmaYaraScan  Scans memory using YARA signatures.
+linux.vmcoreinfo.VMCoreInfo  Extracts crash dump metadata.
+'''
 
 
 -----------------------------------------------------------------------------------------------
