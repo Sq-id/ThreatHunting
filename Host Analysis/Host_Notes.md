@@ -177,31 +177,31 @@ Get-WinEvent -FilterHashtable @{
 
 **<ins>Capturing a full memory dump</ins>**
 
-'''
+```
 [] Open FTK
 [] File > Capture memory 
 [] pick outpath and name
 [] after capture open powershell
 [] get-filehash -algorithm md5 .\memdump.mem
-'''
+```
 
 **<ins>Capturing a process memory dump</ins>**
 
 using procdump64:
 
-'''
+```
 [] Open Powershell
 [] .\procdump64.exe -ma lsass.exe C:\Dir\to\Save -accepteula
 [] get-filehash -algorithm md5 C:\dir\to\save\proc.dmp
-'''
+```
 
 **<ins>Capturing a Crash dump</ins>**
 
-'''
+```
 [] win + r > sysdm.cpl 
 [] Advanced tab > settings > startup and recovery
 [] configure mem dump in system faliure > write debugging information > Active Memory Dump
-'''
+```
 
 
 **<ins>Analysis with Volitility3</ins>**
@@ -210,7 +210,7 @@ Below is a checklist we can fill out as we go thru these steps to build a case o
 
 **Vol Checklist**
 
-'''
+```
 [] Grab Open Network Connections
     [] What are the open connections to out of the network?
     [] What are the open connections to other hosts on the network and do they make sense?
@@ -225,49 +225,49 @@ Below is a checklist we can fill out as we go thru these steps to build a case o
     [] from the information above are we finding any active files we can dig into?
     [] what is the hash of the file in question? 
     [] check virustotal for hash
-'''
+```
 
 
 
 
 First we will need to load up the correct profile
 
-'''vol -f .\mem.mem windows.info'''
+```vol -f .\mem.mem windows.info```
 
 From here we can start gatheing information on running Proccesses and open network connections
 
 Listing Open network connections:
 
-''' vol -f .\memory.dmp windows.netstat '''
+``` vol -f .\memory.dmp windows.netstat ```
             ** Then **
-''' vol -f .\memory.dmp windows.netscan.NetScan '''
+``` vol -f .\memory.dmp windows.netscan.NetScan ```
 
 from here we can look at the ouput for non native windows binaries as a first check, deffinity want to pay attention to spelling for trying to hide in easy typos
 
 after this we can start looking at proccesses running 
 
-''' vol -f .\memory.dmp windows.pslist '''
+``` vol -f .\memory.dmp windows.pslist ```
 
             **Then**
 
-''' vol -f .\memory.dmp windows.pstree '''
+``` vol -f .\memory.dmp windows.pstree ```
 
 here we can start seeing the processes running that may also be connected to the netconnections, additionally were going to want to check and see where the binaries are running from.
 
 from here we can start seeing what files we may have to dig into more.
 in order to dig into a file we need its PID and virtual address so from the above process list we can pick thoes out and use them to provide as flags.
 
-''' vol -f .\memory.dmp windows.dumpfiles --pid 4628 --virtaddr 0xca82b85325a0 '''
+``` vol -f .\memory.dmp windows.dumpfiles --pid 4628 --virtaddr 0xca82b85325a0 ```
 
 once we have the file lets grab the hash and provide that to virustotal as a quick check
 
-'''get-filehash -algorithm SHA1 .\file_sus.exe'''
+```get-filehash -algorithm SHA1 .\file_sus.exe```
 
 Now that we have the file lets start looking into what actions on objective where taken
 
 To do this we can pull the cmdline histroy
 
-'''vol -f .\memory.dmp windows.cmdline'''
+```vol -f .\memory.dmp windows.cmdline```
 
 from this we can use that previous PID to see what was ran when the processes started up.
 
@@ -501,8 +501,8 @@ kernal space is a reserve for the OS and low-level services that will manage res
 
 **<ins>Collection Objectives/Focus of analysis</ins>**
 
-there are diffrent types of memory dumps and basically just detail how verbose they are. we have '''Full Memory Dump''','''Process Dump''', and '''PageFile And Swap Analysis'''. in some cases you can also parse the systems hibernation file '''hiberfil.sys''' to extract RAM Contents. On linux the best tool to capture a memory image is
-'''LiME (Linux Memory Extractor)'''
+there are diffrent types of memory dumps and basically just detail how verbose they are. we have ```Full Memory Dump```,```Process Dump```, and ```PageFile And Swap Analysis```. in some cases you can also parse the systems hibernation file ```hiberfil.sys``` to extract RAM Contents. On linux the best tool to capture a memory image is
+```LiME (Linux Memory Extractor)```
 
 When Collecting a memory image where going to make sure we want to collect the following:
 
@@ -516,20 +516,20 @@ When Collecting a memory image where going to make sure we want to collect the f
 
 Now the question arises, what should we look for in memory?
 
-'''
+```
 [] Suspicious or malicious processes that are running without a corresponding file on disk
 [] DLL injection where malicious code is injected into memory space of a legit process
 [] process hollowing and the mem space that is replaces with malicious code
 [] API hooking and the interception of a normal function call
 [] rootkits in a kernel level space where 
 
-'''
+```
 
 Timing on capture is obviously very important.
 
 If you detect any of the following, capturing a mem_image is probably worth it:
 
-'''
+```
 [] Lateral Movement
     -If we start detecting lateral movement we can look into   what processes are running and what cmdline args have been ran to get a good timeline. this will also expose what credentials have been used and what account to monitor more.
 
@@ -538,20 +538,20 @@ If you detect any of the following, capturing a mem_image is probably worth it:
 [] Evidence Destruction
     This will also reveal a timeline for us, focusing on what cmdline args where ran and what was deleted/ the method of deletion.
 
-'''
+```
 
 **<ins>Capturing memory on linux</ins>**
 
-full memory capture with **'''LiME'''**:
+full memory capture with **```LiME```**:
 
 first we need to ensure LiME is installed
-'''git clone https://github.com/504ensicsLabs/LiME.git'''
+```git clone https://github.com/504ensicsLabs/LiME.git```
 
-'''
+```
 [] 
 
 
-'''
+```
 
 
 
@@ -559,50 +559,50 @@ first we need to ensure LiME is installed
 
 First we will need to load up the correct profile
 
-'''vol -f .\mem.mem banners'''
+```vol -f .\mem.mem banners```
 
-With in our '''volatility3\framework\constants\__init__.py''' file we need to replace the following '''REMOTE_ISF_URL = "https://raw.githubusercontent.com/leludo84/vol3-linux-profiles/main/banners-isf.json"'''
+With in our ```volatility3\framework\constants\__init__.py``` file we need to replace the following ```REMOTE_ISF_URL = "https://raw.githubusercontent.com/leludo84/vol3-linux-profiles/main/banners-isf.json"```
 
 now that thats out the way...
 
 **grabing bash history:**
 
-'''
+```
 vol -f .\dump.mem linux.bash.Bash
-'''
+```
 
 **Grabbing the hosts interfaces and addr's:**
 
-'''
+```
 vol -f .\dump.mem linux.ip.Addr
-'''
+```
 
 **Listing all open processes:**
 
-'''
+```
 vol -f .\dump.mem linux.pslist.PsList
-'''
+```
 
 **grabbing open files in processes:**
 
-'''
+```
 vol -f .\dump.mem linux.lsof.Lsof
-'''
+```
 
 **grabbing Open network connections and nethooks:**
 
-'''
+```
 vol -f .\dump.mem linux.sockstat
-'''
+```
     **And**
-'''
+```
 vol -f .\dump.mem linux.netfilter
-'''
+```
 
 
 **here is a list of all the common linux vol commands**
 
-'''
+```
 banners.Banners     Attempts to identify potential Linux banners in memory.
 linux.bash.Bash     Recovers bash command history.
 linux.boottime.Boottime  Retrieves system boot time.
@@ -644,7 +644,7 @@ linux.tty_check.tty_check  Checks for attached terminals.
 linux.vmaregexscan.VmaRegExScan  Scans memory using regular expressions.
 linux.vmayarascan.VmaYaraScan  Scans memory using YARA signatures.
 linux.vmcoreinfo.VMCoreInfo  Extracts crash dump metadata.
-'''
+```
 
 
 -----------------------------------------------------------------------------------------------
