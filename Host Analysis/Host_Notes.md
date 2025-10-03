@@ -547,11 +547,6 @@ full memory capture with **```LiME```**:
 first we need to ensure LiME is installed
 ```git clone https://github.com/504ensicsLabs/LiME.git```
 
-```
-[] 
-
-
-```
 
 
 
@@ -589,16 +584,35 @@ vol -f .\dump.mem linux.pslist.PsList
 vol -f .\dump.mem linux.lsof.Lsof
 ```
 
+listing what teminal input from processes, by pid, ppid, and Process Name.
+
+```
+
+
+```
+
+
 **grabbing Open network connections and nethooks:**
 
+This will list the following properties (Pretty OP):
+NetNS, Process Name, PID, TID, FD, Sock Offset, Family  Type, Proto, Source Addr, Source Port, Destination Addr, Destination Port, State, Filter 
 ```
 vol -f .\dump.mem linux.sockstat
 ```
-    **And**
+   
+     **And**
+
 ```
 vol -f .\dump.mem linux.netfilter
 ```
 
+Checking for rootkits:
+Pretty much were going to look for hooked syscalls 
+
+
+```
+
+```
 
 **here is a list of all the common linux vol commands**
 
