@@ -32,6 +32,28 @@
 
 <details>
 
+### **Windows Host Investigation Checklist ** 
+Copy and Paste out this checklist to use as a guide in endpoint investigation.
+
+```
+Situational Awareness:
+[] hostname: 
+    get-item HKLM:\SYSTEM\CurrentControlSet\Control\ComputerName\ActiveComputerName
+
+[] IP:
+[] Active Users: 
+[] Current Connections?
+    mem - vol -f .\memdump.mem windows.netscan.NetScan
+    host - netstat -ano
+
+[] 
+
+```
+
+
+
+
+
 ### **Increasing Visablilty and Host Logging**
 Audit Policies
 >Audit Policies are used to dictate which security related events are recorded. They can be used to record telemerty on activity like account logon events, Account Management, System events, Privilege use, And much more
@@ -271,7 +293,21 @@ To do this we can pull the cmdline histroy
 
 from this we can use that previous PID to see what was ran when the processes started up.
 
+**Listing Windows Host Info **
+First Grab Offset of \REGISTRY\MACHINE\SYSTEM
 
+```
+vol -f .\memdump.mem windows.registry.hivelist
+```
+
+Once you have the offset
+
+
+```
+vol -f .\memdump.mem windows.registry.printkey --offset 0x86226008 --key "ControlSet001\Control\ComputerName"
+```
+
+Additionally this will work with any reg query.
 
 </details>
 
