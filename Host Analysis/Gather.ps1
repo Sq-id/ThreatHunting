@@ -148,7 +148,8 @@ switch($MainSelection){
       write-host "Listing Current Users and Logged on users..." -ForegroundColor $random
             Get-WmiObject -Class Win32_ComputerSystem | Select-Object UserName
       write-host "Checking for Non-Signed executables and Drivers" -ForegroundColor $random
-        
+        $drivers=Get-WindowsDriver -Online -All | select * |Where-Object {$_.DriverSignature -ne 'Signed'}
+        $drivers
       write-host "Checking For ..." -ForegroundColor $random
       
   
