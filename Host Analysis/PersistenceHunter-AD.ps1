@@ -51,12 +51,13 @@ $CollectorScriptBlock = {
         $regPaths = @(
             "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run",
             "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce",
-            "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnceEx",
             "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon",
             "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options",
             "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\SilentProcessExit",
             "HKLM:\System\CurrentControlSet\Control\Session Manager\AppCertDlls",
-            "HKLM:\Software\Classes\*\Shell\Open\Command"
+            "HKLM:\Software\Classes\*\Shell\Open\Command",
+            "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
+            "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
         )
         $items = @()
         foreach ($path in $regPaths) {
@@ -71,20 +72,6 @@ $CollectorScriptBlock = {
                 }
             } catch {}
         }
-        try {
-            $userSids = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" | Where-Object { $_.Name -match 'S-1-5-21' }
-            foreach ($sid in $userSids) {
-                $userPath = "Registry::HKEY_USERS\$($sid.PSChildName)\Software\Microsoft\Windows\CurrentVersion\Run"
-                $props = Get-ItemProperty -Path $userPath -ErrorAction SilentlyContinue
-                if ($props) {
-                    $props.PSObject.Properties | Where-Object { 
-                        $_.Name -notin @('PSPath','PSParentPath','PSChildName','PSDrive','PSProvider') 
-                    } | ForEach-Object {
-                        $items += [PSCustomObject]@{ Location = $userPath; Name = $_.Name; Value = $_.Value }
-                    }
-                }
-            }
-        } catch {}
         return $items
     }
 
