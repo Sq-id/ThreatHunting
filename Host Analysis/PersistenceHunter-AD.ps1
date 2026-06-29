@@ -217,16 +217,8 @@ $CollectorScriptBlock = {
 Write-Log "=== PerformanceCheck-AD Collection Started ==="
 
 try {
-    $allComputers = Get-ADComputer -Filter * -Properties OperatingSystem, Name
-    $windowsComputers = $allComputers | Where-Object { $_.OperatingSystem -like "*Windows*" } | Select-Object -ExpandProperty Name
-    $nonWindows = $allComputers | Where-Object { $_.OperatingSystem -notlike "*Windows*" -or $_.OperatingSystem -eq $null } | Select-Object Name, OperatingSystem
-    
-    if ($nonWindows) {
-        $nonWindows | Select-Object Name, OperatingSystem | Export-Csv (Join-Path $LogsPath "Additional_Hosts.csv") -NoTypeInformation -Encoding UTF8
-        Write-Log "Logged $($nonWindows.Count) non-Windows hosts to Additional_Hosts.csv"
-    }
-    
-    Write-Log "Retrieved $($windowsComputers.Count) Windows computers from Active Directory"
+    $allComputers = Get-ADComputer -Filter * -Properties Name | Select-Object -ExpandProperty Name
+    Write-Log "Retrieved $($allComputers.Count) computers from Active Directory"
 } catch {
     Write-Log "Failed to query Active Directory: $_" "ERROR"
     exit 1
@@ -236,7 +228,7 @@ Write-Log "Starting connectivity checks..."
 $connectivityResults = @()
 $unreachable = @()
 
-foreach ($comp in $windowsComputers) {
+foreach ($comp in $allComputers) {
     $conn = Test-HostConnectivity -ComputerName $comp
     $connectivityResults += $conn
     if (-not $conn.Reachable) { $unreachable += $comp }
