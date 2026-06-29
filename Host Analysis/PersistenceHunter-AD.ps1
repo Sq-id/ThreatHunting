@@ -90,7 +90,7 @@ $CollectorScriptBlock = {
 
     function Get-AllScheduledTasks {
         try {
-            Get-ScheduledTask | ForEach-Object {
+            Get-ScheduledTask -TaskPath "\" | ForEach-Object {
                 $actions = ($_.Actions | ForEach-Object { "$($_.Execute) $($_.Arguments)" }) -join " | "
                 [PSCustomObject]@{
                     TaskPath = $_.TaskPath
@@ -200,17 +200,31 @@ $CollectorScriptBlock = {
     }
 
     $results.Techniques["RegistryRunKeys_Startup"] = Get-RegistryPersistence
-    $results.Techniques["ScheduledTasks"]          = Get-AllScheduledTasks
-    $results.Techniques["ShortcutLNK"]             = Get-LNKFiles
-    $results.Techniques["PowerShellProfiles"]      = Get-PowerShellProfiles
-    $results.Techniques["WindowsServices"]         = Get-AllServices
-    $results.Techniques["AdminShareExes"]          = Get-AdminShareExes
-    $results.Techniques["WSLDetection"]            = Get-WSLDetection
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Completed: RegistryRunKeys_Startup ($($results.Techniques["RegistryRunKeys_Startup"].Count) items)"
+
+    $results.Techniques["ScheduledTasks"] = Get-AllScheduledTasks
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Completed: ScheduledTasks ($($results.Techniques["ScheduledTasks"].Count) items)"
+
+    $results.Techniques["ShortcutLNK"] = Get-LNKFiles
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Completed: ShortcutLNK ($($results.Techniques["ShortcutLNK"].Count) items)"
+
+    $results.Techniques["PowerShellProfiles"] = Get-PowerShellProfiles
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Completed: PowerShellProfiles ($($results.Techniques["PowerShellProfiles"].Count) items)"
+
+    $results.Techniques["WindowsServices"] = Get-AllServices
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Completed: WindowsServices ($($results.Techniques["WindowsServices"].Count) items)"
+
+    $results.Techniques["AdminShareExes"] = Get-AdminShareExes
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Completed: AdminShareExes"
+
+    $results.Techniques["WSLDetection"] = Get-WSLDetection
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Completed: WSLDetection ($($results.Techniques["WSLDetection"].Count) items)"
 
     $null = New-Item -Path "C:\temp" -ItemType Directory -Force -ErrorAction SilentlyContinue
     $jsonPath = "C:\temp\Performance_$($env:COMPUTERNAME).json"
     $results | ConvertTo-Json -Depth 6 | Out-File -FilePath $jsonPath -Encoding UTF8 -Force
     
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] JSON written successfully for $env:COMPUTERNAME"
     return $jsonPath
 }
 
@@ -247,21 +261,52 @@ if ($reachableHosts.Count -eq 0) {
 Write-Log "Starting collection against $($reachableHosts.Count) reachable hosts (ThrottleLimit: $ThrottleLimit)"
 
 $jobs = @()
+$jobLookup = @{}   # job Id -> hostname
+
 foreach ($hostName in $reachableHosts) {
     while ((Get-Job -State Running).Count -ge $ThrottleLimit) {
         Start-Sleep -Milliseconds 1500
     }
     $job = Invoke-Command -ComputerName $hostName -ScriptBlock $CollectorScriptBlock -ArgumentList $hostName -AsJob
     $jobs += $job
+    $jobLookup[$job.Id] = $hostName
 }
 
-Write-Log "All jobs launched. Waiting for completion..."
-$jobs | Wait-Job | Out-Null
-Write-Log "All remote jobs completed. Retrieving data..."
+Write-Log "All jobs launched. Monitoring progress..."
+
+while ($jobs | Where-Object { $_.State -eq 'Running' -or $_.State -eq 'NotStarted' }) {
+    foreach ($job in ($jobs | Where-Object { $_.HasMoreData })) {
+        $hostName = $jobLookup[$job.Id]
+        $output = Receive-Job -Job $job -Keep
+        if ($output) {
+            foreach ($line in $output) {
+                if ($line) {
+                    Write-Host "[$hostName] $line" -ForegroundColor Cyan
+                }
+            }
+        }
+    }
+    Start-Sleep -Milliseconds 800
+}
+
+# Final receive for any remaining output on completed jobs
+foreach ($job in $jobs) {
+    $hostName = $jobLookup[$job.Id]
+    $output = Receive-Job -Job $job
+    if ($output) {
+        foreach ($line in $output) {
+            if ($line) {
+                Write-Host "[$hostName] $line" -ForegroundColor Cyan
+            }
+        }
+    }
+}
+
+Write-Log "All remote jobs completed. Retrieving JSON files..."
 
 $collectedCount = 0
 foreach ($job in $jobs) {
-    $hostName = $job.Location
+    $hostName = $jobLookup[$job.Id]
     $jsonRemote = "\\$hostName\C$\temp\Performance_$hostName.json"
     $jsonLocal  = Join-Path $CollectedPath "$hostName.json"
     
