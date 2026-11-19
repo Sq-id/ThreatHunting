@@ -1,161 +1,211 @@
-$banner="
-  __            _                  _   _       
- / _|_   _  ___| | __  _ __  _   _| |_(_)_ __  
-| |_| | | |/ __| |/ / | '_ \| | | | __| | '_ \ 
-|  _| |_| | (__|   <  | |_) | |_| | |_| | | | |
-|_|  \__,_|\___|_|\_\ | .__/ \__,_|\__|_|_| |_|
-                      |_|                      
-"
+<#
+.SYNOPSIS
+    Enumerates local host configuration from Windows workstations via Active Directory.
+.DESCRIPTION
+    Queries AD for Windows workstations, performs connectivity pre-checks (ping + WinRM),
+    attempts WinRM service restart via WMI if needed, collects local configuration via
+    Invoke-Command, and exports results to JSON.
+.PARAMETER OutputPath
+    Path for the output JSON file. Default: C:\Temp\WorkstationConfig.json
+.PARAMETER ThrottleLimit
+    Reserved for future parallel processing. Currently unused (sequential).
+.PARAMETER WhatIf
+    Reserved for future dry-run support.
+#>
+param(
+    [string]$OutputPath = "C:\Temp\WorkstationConfig.json",
+    [int]$ThrottleLimit = 10,
+    [switch]$WhatIf
+)
 
-$Length = $banner.Length
-$counts = 0 .. $Length
+# --- 1. Get Windows workstations from AD ---
+Write-Host "Querying AD for Windows workstations..." -ForegroundColor Cyan
 
-$colors = [enum]::GetValues([System.ConsoleColor])
-$colors = $colors -replace 'Black','Green' -replace 'DarkBlue','DarkYellow' -replace 'Blue','Magenta'
-$random = $colors | Get-Random
+$workstations = Get-ADComputer -Filter {
+    OperatingSystem -like "*Windows*" -and 
+    OperatingSystem -notlike "*Server*" -and 
+    Enabled -eq $true
+} -Properties OperatingSystem, OperatingSystemVersion, DistinguishedName, DNSHostName |
+    Select-Object Name, DNSHostName, DistinguishedName, OperatingSystem, OperatingSystemVersion
 
-foreach($m in $counts){
-Write-Host $banner[$m] -NoNewline -ForegroundColor $random
-$milisecondRange = 1..4
-$randMili = $milisecondRange | Get-Random
-sleep -Milliseconds ".$randMili"
+Write-Host "Found $($workstations.Count) workstations." -ForegroundColor Green
+
+# --- 2. Initialize PSCustomObjects ---
+$results = foreach ($ws in $workstations) {
+    [PSCustomObject]@{
+        Hostname                = $ws.Name
+        DNSHostName             = $ws.DNSHostName
+        DistinguishedName       = $ws.DistinguishedName
+        Online                  = $false
+        RemotingAvailable       = $false
+        CollectionError         = $null
+        CollectionTime          = $null
+
+        # Windows Version & Release
+        OSCaption               = $null
+        OSVersion               = $null
+        OSBuildNumber           = $null
+        DisplayVersion          = $null
+        ReleaseId               = $null
+        OSArchitecture          = $null
+        InstallDate             = $null
+
+        # Local Users (array of objects)
+        LocalUsers              = @()
+
+        # Local Administrators
+        LocalAdministrators     = @()
+
+        # Other local config
+        SMBRequireSecuritySignature = $null
+        SMBEnableSecuritySignature  = $null
+        SMBv1Enabled                = $null
+        FirewallDomainProfileEnabled = $null
+        CredentialGuardEnabled      = $null
+        LSAProtectionEnabled        = $null
+        PowerShellScriptBlockLogging = $null
+        PowerShellModuleLogging     = $null
+    }
 }
 
-Write-Host "
-===========Select an option to preform============
-|| [1]. Gather persistence Locations            ||
-|| [2]. Gather Sus EventLogs                    ||
-|| [3]. General system information              ||
-==================================================
-" -BackgroundColor Black -ForegroundColor $Random
-$MainSelection = Read-Host "Select one" 
+# --- Remote script block (runs on the workstation) ---
+$remoteScript = {
+    $output = [PSCustomObject]@{}
 
+    # Windows Version + Release
+    $os = Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue
+    $reg = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue
 
-switch($MainSelection){
+    $output | Add-Member -NotePropertyName OSCaption        -NotePropertyValue $os.Caption
+    $output | Add-Member -NotePropertyName OSVersion        -NotePropertyValue $os.Version
+    $output | Add-Member -NotePropertyName OSBuildNumber    -NotePropertyValue $os.BuildNumber
+    $output | Add-Member -NotePropertyName DisplayVersion   -NotePropertyValue $reg.DisplayVersion
+    $output | Add-Member -NotePropertyName ReleaseId        -NotePropertyValue $reg.ReleaseId
+    $output | Add-Member -NotePropertyName OSArchitecture   -NotePropertyValue $os.OSArchitecture
+    $output | Add-Member -NotePropertyName InstallDate      -NotePropertyValue $os.InstallDate
 
-  '1'{
-      Write-host "Gathering Registry Data..." -ForegroundColor $random
-            $RegCheckpoints=@("HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
-            "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce","HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon","HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify",
-            "HKLM:\SYSTEM\CurrentControlSet\Services","HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree","HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager",
-            "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows","HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options")
-      Foreach($RegCheckpoint in $RegCheckpoints){
-        Get-Item $RegCheckpoint -ErrorAction SilentlyContinue
+    # Local Users + IsAdmin
+    $adminNames = @()
+    try {
+        $adminNames = (Get-LocalGroupMember -Group "Administrators" -ErrorAction Stop).Name
+    } catch {}
+
+    $localUsers = Get-LocalUser -ErrorAction SilentlyContinue | ForEach-Object {
+        [PSCustomObject]@{
+            Name             = $_.Name
+            Enabled          = $_.Enabled
+            PasswordLastSet  = $_.PasswordLastSet
+            PasswordRequired = $_.PasswordRequired
+            PasswordExpires  = $_.PasswordExpires
+            LastLogon        = $_.LastLogon
+            Description      = $_.Description
+            IsAdmin          = ($adminNames -contains "$env:COMPUTERNAME\$($_.Name)") -or ($adminNames -contains $_.Name)
         }
-      
-      write-host "Gathering scheduled tasks..." -ForegroundColor $random
-            $tasks=Get-ScheduledTask
-            $taskRes=
-            foreach($task in $tasks){
-                if(($task.Author -eq 'Microsoft Corporation') -or ($task.Author -eq 'Microsoft') -or ($task.Author -eq 'Mozilla') -or ($task.Author -eq 'Microsoft Corporation.')){
-                    $task | Out-Null
+    }
+    $output | Add-Member -NotePropertyName LocalUsers -NotePropertyValue $localUsers
 
-                    }
-                else{
-                    [pscustomobject]@{
-                        TaskName=$task.TaskName
-                        Author=$task.Author
-                        Action=$task.actions.Execute
-                        Description=$task.Description
-                        Path=$task.Path}
-                
-                }
-            }
-            $taskRes
-      write-host "Checking Start-up folder..." -ForegroundColor $random
-        $usrDirs=Get-ChildItem C:\Users
-        $startupFolder=@('C:\ProgramData\Microsoft\windows\Start Menu\Programs\StartUp')
-        foreach($usrDir in $usrDirs.Name){
-            $startupFolder += "C:\Users\$usrDir\Appdata\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
-            
-        }
-        foreach($startup in $startupFolder){
-            Write-host "Checking $startup" -ForegroundColor $random
-            Get-ChildItem $startup -ErrorAction SilentlyContinue
-        }
+    # Local Administrators (raw membership)
+    $output | Add-Member -NotePropertyName LocalAdministrators -NotePropertyValue $adminNames
 
-      write-host "Checking Powershell profiles..." -ForegroundColor $random
-          $psprofiles=@($profile.AllUsersAllHosts,$profile.AllUsersCurrentHost,$profile.CurrentUserAllHosts,$profile.CurrentUserCurrentHost)
-          foreach($usrDir in $usrDirs){
-            $psprofiles+="C:\Users\$usrDir\Documents\WindowsPowerShell\Microsoft.PowerShellISE_profile.ps1"
-            $psprofiles+="C:\Users\$usrDir\Documents\WindowsPowerShell\profile.ps1"
-          }
-          $psprofiles=$psprofiles | Select-Object -Unique
+    # SMB settings
+    try {
+        $smb = Get-SmbServerConfiguration -ErrorAction Stop
+        $output | Add-Member -NotePropertyName SMBRequireSecuritySignature -NotePropertyValue $smb.RequireSecuritySignature
+        $output | Add-Member -NotePropertyName SMBEnableSecuritySignature  -NotePropertyValue $smb.EnableSecuritySignature
+    } catch {}
 
-            foreach($psprof in $psprofiles){
-                $tmp_tp = Test-Path $psprof
-                
-                if($tmp_tp -eq $true){
-                    write-host "[+] PS Profile present at: $psprof" -ForegroundColor Red -ErrorAction SilentlyContinue
-                
-                }
-                else{
-                    write-host "[-] No PSProfile located at: $psprof" -ForegroundColor Cyan -ErrorAction SilentlyContinue
-                
-                }
-            
-            }
-      }
+    # SMBv1 (server)
+    try {
+        $smbv1 = Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -ErrorAction SilentlyContinue
+        $output | Add-Member -NotePropertyName SMBv1Enabled -NotePropertyValue ($smbv1.State -eq "Enabled")
+    } catch {}
 
-  '2'{
-      Write-host "Listing Login Times for all users..." -ForegroundColor $random
-        Write-host "Listing Local Logon information.." -ForegroundColor $random
-        $succLogins = Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4624} -ErrorAction SilentlyContinue
-        $failedLogins = @{LogName='Security';ProviderName='Microsoft-Windows-Security-Auditing';ID=4625 }
-        $ExplicitLogins = Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4648} -ErrorAction SilentlyContinue
-        
-        $failedresult = Get-WinEvent -FilterHashtable $failedLogins  | ForEach-Object {
-            $eventXml = ([xml]$_.ToXml()).Event
-            $userName = ($eventXml.EventData.Data | Where-Object { $_.Name -eq 'TargetUserName' }).'#text'
-            $computer = ($eventXml.EventData.Data | Where-Object { $_.Name -eq 'WorkstationName' }).'#text'
-    
-            [PSCustomObject]@{
-            Time     = [DateTime]$eventXml.System.TimeCreated.SystemTime
-            UserName = $userName
-            Computer = $computer
-             }
-            };$failedresult
+    # Firewall Domain profile
+    try {
+        $fw = Get-NetFirewallProfile -Name Domain -ErrorAction Stop
+        $output | Add-Member -NotePropertyName FirewallDomainProfileEnabled -NotePropertyValue $fw.Enabled
+    } catch {}
 
-    
+    # Credential Guard / LSA Protection (basic registry check)
+    $cg = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard" -ErrorAction SilentlyContinue
+    $output | Add-Member -NotePropertyName CredentialGuardEnabled -NotePropertyValue ($cg.EnableVirtualizationBasedSecurity -eq 1)
 
+    $lsa = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" -ErrorAction SilentlyContinue
+    $output | Add-Member -NotePropertyName LSAProtectionEnabled -NotePropertyValue ($lsa.RunAsPPL -eq 1)
 
+    # PowerShell logging
+    $psLogging = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" -ErrorAction SilentlyContinue
+    $output | Add-Member -NotePropertyName PowerShellScriptBlockLogging -NotePropertyValue ($psLogging.EnableScriptBlockLogging -eq 1)
 
+    $psModule = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging" -ErrorAction SilentlyContinue
+    $output | Add-Member -NotePropertyName PowerShellModuleLogging -NotePropertyValue ($psModule.EnableModuleLogging -eq 1)
 
-      write-host "Listing File Creation..." -ForegroundColor $random
-            
-      write-host "Listing Process execution..." -ForegroundColor $random
-
-      write-host "Listing Connections Made..." -ForegroundColor $random
-  
-      }
-  '3'{ 
-
-      Write-Host "Listing Current Connections..." -ForegroundColor $random
-        $netConnections = Get-NetTCPConnection
-        $netConToProc = foreach ($netConnection in $netConnections) {
-        $process = Get-Process -Id $netConnection.OwningProcess
-        [pscustomobject]@{
-            LocalAddress = $netConnection.LocalAddress
-            LocalPort = $netConnection.LocalPort
-            RemoteAddress = $netConnection.RemoteAddress
-            State = $netConnection.State
-            OwningProcess = $process.Name
-            OwningProcessLocation = $process.Path
-            }
-        }
-        $netConToProc | Format-Table -AutoSize
-
-      write-host "Listing Current Users and Logged on users..." -ForegroundColor $random
-            Get-WmiObject -Class Win32_ComputerSystem | Select-Object UserName
-      write-host "Checking for Non-Signed executables and Drivers" -ForegroundColor $random
-        $drivers=Get-WindowsDriver -Online -All | select * |Where-Object {$_.DriverSignature -ne 'Signed'}
-        $drivers
-      write-host "Checking For ..." -ForegroundColor $random
-      
-  
-      }
-    
-
-
-
+    return $output
 }
+
+# --- 3. Process each workstation ---
+$i = 0
+foreach ($obj in $results) {
+    $i++
+    $target = $obj.DNSHostName
+    if (-not $target) { $target = $obj.Hostname }
+
+    Write-Progress -Activity "Collecting workstation config" -Status "$target ($i/$($results.Count))" -PercentComplete (($i / $results.Count) * 100)
+
+    # Pre-check: Ping
+    if (-not (Test-Connection -ComputerName $target -Count 1 -Quiet -ErrorAction SilentlyContinue)) {
+        $obj.CollectionError = "Ping failed"
+        continue
+    }
+    $obj.Online = $true
+
+    # Pre-check: WinRM
+    $winrmOk = $false
+    try {
+        Test-WSMan -ComputerName $target -ErrorAction Stop | Out-Null
+        $winrmOk = $true
+    } catch {}
+
+    # Attempt WinRM restart via WMI if needed
+    if (-not $winrmOk) {
+        try {
+            $svc = Get-CimInstance -ComputerName $target -ClassName Win32_Service -Filter "Name='WinRM'" -ErrorAction Stop
+            if ($svc) {
+                Invoke-CimMethod -InputObject $svc -MethodName StopService -ErrorAction SilentlyContinue | Out-Null
+                Start-Sleep -Seconds 2
+                Invoke-CimMethod -InputObject $svc -MethodName StartService -ErrorAction Stop | Out-Null
+                Start-Sleep -Seconds 3
+                Test-WSMan -ComputerName $target -ErrorAction Stop | Out-Null
+                $winrmOk = $true
+            }
+        } catch {
+            $obj.CollectionError = "WinRM restart via WMI failed: $($_.Exception.Message)"
+        }
+    }
+
+    if (-not $winrmOk) {
+        if (-not $obj.CollectionError) { $obj.CollectionError = "WinRM unavailable" }
+        continue
+    }
+
+    # Collect data
+    try {
+        $data = Invoke-Command -ComputerName $target -ScriptBlock $remoteScript -ErrorAction Stop
+        $obj.RemotingAvailable = $true
+        $obj.CollectionTime = Get-Date
+
+        # Merge returned properties into the object
+        foreach ($prop in $data.PSObject.Properties) {
+            if ($obj.PSObject.Properties.Name -contains $prop.Name) {
+                $obj.$($prop.Name) = $prop.Value
+            }
+        }
+    } catch {
+        $obj.CollectionError = "Invoke-Command failed: $($_.Exception.Message)"
+    }
+}
+
+# --- 4. Export to JSON ---
+$results | ConvertTo-Json -Depth 6 | Out-File -FilePath $OutputPath -Encoding utf8
+Write-Host "Complete. Results written to $OutputPath" -ForegroundColor Green
+Write-Host "Online: $(($results | Where-Object Online).Count) | Remoting OK: $(($results | Where-Object RemotingAvailable).Count)" -ForegroundColor Cyan
