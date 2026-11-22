@@ -1,17 +1,4 @@
-<#
-.SYNOPSIS
-    Enumerates local host configuration from Windows workstations via Active Directory.
-.DESCRIPTION
-    Queries AD for Windows workstations, performs connectivity pre-checks (ping + WinRM),
-    attempts WinRM service restart via WMI if needed, collects local configuration via
-    Invoke-Command, and exports results to JSON.
-.PARAMETER OutputPath
-    Path for the output JSON file. Default: C:\Temp\WorkstationConfig.json
-.PARAMETER ThrottleLimit
-    Reserved for future parallel processing. Currently unused (sequential).
-.PARAMETER WhatIf
-    Reserved for future dry-run support.
-#>
+
 param(
     [string]$OutputPath = "C:\Temp\WorkstationConfig.json",
     [int]$ThrottleLimit = 10,
