@@ -1,83 +1,92 @@
+#Requires -RunAsAdministrator
 
+<#
+.SYNOPSIS
+    Collects local host configuration from the machine it is run on (intended for Domain Controllers).
+.DESCRIPTION
+    Gathers Windows version/release, local users (with IsAdmin flag), local administrators,
+    SMB settings, firewall profile, Credential Guard / LSA Protection, and PowerShell logging
+    status. Outputs a single JSON object. No remoting is used.
+.PARAMETER OutputPath
+    Path for the output JSON file. Default: C:\Temp\DCConfig.json
+#>
 param(
-    [string]$OutputPath = "C:\Temp\WorkstationConfig.json",
-    [int]$ThrottleLimit = 10,
-    [switch]$WhatIf
+    [string]$OutputPath = "C:\Temp\DCConfig.json"
 )
 
-# --- 1. Get Windows workstations from AD ---
-Write-Host "Querying AD for Windows workstations..." -ForegroundColor Cyan
+Write-Host "Collecting local configuration on $env:COMPUTERNAME..." -ForegroundColor Cyan
 
-$workstations = Get-ADComputer -Filter {
-    OperatingSystem -like "*Windows*" -and 
-    OperatingSystem -notlike "*Server*" -and 
-    Enabled -eq $true
-} -Properties OperatingSystem, OperatingSystemVersion, DistinguishedName, DNSHostName |
-    Select-Object Name, DNSHostName, DistinguishedName, OperatingSystem, OperatingSystemVersion
+# --- Initialize result object ---
+$result = [PSCustomObject]@{
+    Hostname                = $env:COMPUTERNAME
+    DNSHostName             = ([System.Net.Dns]::GetHostByName($env:COMPUTERNAME)).HostName
+    DistinguishedName       = $null   # populated below if AD module available
+    Online                  = $true
+    RemotingAvailable       = $false  # N/A for local-only
+    CollectionError         = $null
+    CollectionTime          = Get-Date
 
-Write-Host "Found $($workstations.Count) workstations." -ForegroundColor Green
+    # Windows Version & Release
+    OSCaption               = $null
+    OSVersion               = $null
+    OSBuildNumber           = $null
+    DisplayVersion          = $null
+    ReleaseId               = $null
+    OSArchitecture          = $null
+    InstallDate             = $null
 
-# --- 2. Initialize PSCustomObjects ---
-$results = foreach ($ws in $workstations) {
-    [PSCustomObject]@{
-        Hostname                = $ws.Name
-        DNSHostName             = $ws.DNSHostName
-        DistinguishedName       = $ws.DistinguishedName
-        Online                  = $false
-        RemotingAvailable       = $false
-        CollectionError         = $null
-        CollectionTime          = $null
+    # Local Users (array of objects)
+    LocalUsers              = @()
 
-        # Windows Version & Release
-        OSCaption               = $null
-        OSVersion               = $null
-        OSBuildNumber           = $null
-        DisplayVersion          = $null
-        ReleaseId               = $null
-        OSArchitecture          = $null
-        InstallDate             = $null
+    # Local Administrators
+    LocalAdministrators     = @()
 
-        # Local Users (array of objects)
-        LocalUsers              = @()
-
-        # Local Administrators
-        LocalAdministrators     = @()
-
-        # Other local config
-        SMBRequireSecuritySignature = $null
-        SMBEnableSecuritySignature  = $null
-        SMBv1Enabled                = $null
-        FirewallDomainProfileEnabled = $null
-        CredentialGuardEnabled      = $null
-        LSAProtectionEnabled        = $null
-        PowerShellScriptBlockLogging = $null
-        PowerShellModuleLogging     = $null
-    }
+    # Other local config
+    SMBRequireSecuritySignature = $null
+    SMBEnableSecuritySignature  = $null
+    SMBv1Enabled                = $null
+    FirewallDomainProfileEnabled = $null
+    CredentialGuardEnabled      = $null
+    LSAProtectionEnabled        = $null
+    PowerShellScriptBlockLogging = $null
+    PowerShellModuleLogging     = $null
 }
 
-# --- Remote script block (runs on the workstation) ---
-$remoteScript = {
-    $output = [PSCustomObject]@{}
+# Try to get DistinguishedName from AD if the module is available
+try {
+    if (Get-Module -ListAvailable -Name ActiveDirectory) {
+        Import-Module ActiveDirectory -ErrorAction SilentlyContinue
+        $adComputer = Get-ADComputer -Identity $env:COMPUTERNAME -Properties DistinguishedName -ErrorAction SilentlyContinue
+        if ($adComputer) {
+            $result.DistinguishedName = $adComputer.DistinguishedName
+        }
+    }
+} catch {}
 
-    # Windows Version + Release
-    $os = Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue
+# --- Windows Version + Release ---
+try {
+    $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
     $reg = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue
 
-    $output | Add-Member -NotePropertyName OSCaption        -NotePropertyValue $os.Caption
-    $output | Add-Member -NotePropertyName OSVersion        -NotePropertyValue $os.Version
-    $output | Add-Member -NotePropertyName OSBuildNumber    -NotePropertyValue $os.BuildNumber
-    $output | Add-Member -NotePropertyName DisplayVersion   -NotePropertyValue $reg.DisplayVersion
-    $output | Add-Member -NotePropertyName ReleaseId        -NotePropertyValue $reg.ReleaseId
-    $output | Add-Member -NotePropertyName OSArchitecture   -NotePropertyValue $os.OSArchitecture
-    $output | Add-Member -NotePropertyName InstallDate      -NotePropertyValue $os.InstallDate
+    $result.OSCaption       = $os.Caption
+    $result.OSVersion       = $os.Version
+    $result.OSBuildNumber   = $os.BuildNumber
+    $result.DisplayVersion  = $reg.DisplayVersion
+    $result.ReleaseId       = $reg.ReleaseId
+    $result.OSArchitecture  = $os.OSArchitecture
+    $result.InstallDate     = $os.InstallDate
+} catch {
+    $result.CollectionError = "Failed to read OS info: $($_.Exception.Message)"
+}
 
-    # Local Users + IsAdmin
+# --- Local Users + IsAdmin ---
+try {
     $adminNames = @()
     try {
         $adminNames = (Get-LocalGroupMember -Group "Administrators" -ErrorAction Stop).Name
     } catch {}
 
-    $localUsers = Get-LocalUser -ErrorAction SilentlyContinue | ForEach-Object {
+    $result.LocalUsers = @(Get-LocalUser -ErrorAction SilentlyContinue | ForEach-Object {
         [PSCustomObject]@{
             Name             = $_.Name
             Enabled          = $_.Enabled
@@ -88,111 +97,59 @@ $remoteScript = {
             Description      = $_.Description
             IsAdmin          = ($adminNames -contains "$env:COMPUTERNAME\$($_.Name)") -or ($adminNames -contains $_.Name)
         }
+    })
+
+    $result.LocalAdministrators = $adminNames
+} catch {
+    if (-not $result.CollectionError) {
+        $result.CollectionError = "Failed to read local users: $($_.Exception.Message)"
     }
-    $output | Add-Member -NotePropertyName LocalUsers -NotePropertyValue $localUsers
+}
 
-    # Local Administrators (raw membership)
-    $output | Add-Member -NotePropertyName LocalAdministrators -NotePropertyValue $adminNames
+# --- SMB settings ---
+try {
+    $smb = Get-SmbServerConfiguration -ErrorAction Stop
+    $result.SMBRequireSecuritySignature = $smb.RequireSecuritySignature
+    $result.SMBEnableSecuritySignature  = $smb.EnableSecuritySignature
+} catch {}
 
-    # SMB settings
-    try {
-        $smb = Get-SmbServerConfiguration -ErrorAction Stop
-        $output | Add-Member -NotePropertyName SMBRequireSecuritySignature -NotePropertyValue $smb.RequireSecuritySignature
-        $output | Add-Member -NotePropertyName SMBEnableSecuritySignature  -NotePropertyValue $smb.EnableSecuritySignature
-    } catch {}
+# --- SMBv1 ---
+try {
+    $smbv1 = Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -ErrorAction SilentlyContinue
+    $result.SMBv1Enabled = ($smbv1.State -eq "Enabled")
+} catch {}
 
-    # SMBv1 (server)
-    try {
-        $smbv1 = Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -ErrorAction SilentlyContinue
-        $output | Add-Member -NotePropertyName SMBv1Enabled -NotePropertyValue ($smbv1.State -eq "Enabled")
-    } catch {}
+# --- Firewall Domain profile ---
+try {
+    $fw = Get-NetFirewallProfile -Name Domain -ErrorAction Stop
+    $result.FirewallDomainProfileEnabled = $fw.Enabled
+} catch {}
 
-    # Firewall Domain profile
-    try {
-        $fw = Get-NetFirewallProfile -Name Domain -ErrorAction Stop
-        $output | Add-Member -NotePropertyName FirewallDomainProfileEnabled -NotePropertyValue $fw.Enabled
-    } catch {}
-
-    # Credential Guard / LSA Protection (basic registry check)
+# --- Credential Guard / LSA Protection ---
+try {
     $cg = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard" -ErrorAction SilentlyContinue
-    $output | Add-Member -NotePropertyName CredentialGuardEnabled -NotePropertyValue ($cg.EnableVirtualizationBasedSecurity -eq 1)
+    $result.CredentialGuardEnabled = ($cg.EnableVirtualizationBasedSecurity -eq 1)
+} catch {}
 
+try {
     $lsa = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" -ErrorAction SilentlyContinue
-    $output | Add-Member -NotePropertyName LSAProtectionEnabled -NotePropertyValue ($lsa.RunAsPPL -eq 1)
+    $result.LSAProtectionEnabled = ($lsa.RunAsPPL -eq 1)
+} catch {}
 
-    # PowerShell logging
+# --- PowerShell logging ---
+try {
     $psLogging = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" -ErrorAction SilentlyContinue
-    $output | Add-Member -NotePropertyName PowerShellScriptBlockLogging -NotePropertyValue ($psLogging.EnableScriptBlockLogging -eq 1)
+    $result.PowerShellScriptBlockLogging = ($psLogging.EnableScriptBlockLogging -eq 1)
+} catch {}
 
+try {
     $psModule = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging" -ErrorAction SilentlyContinue
-    $output | Add-Member -NotePropertyName PowerShellModuleLogging -NotePropertyValue ($psModule.EnableModuleLogging -eq 1)
+    $result.PowerShellModuleLogging = ($psModule.EnableModuleLogging -eq 1)
+} catch {}
 
-    return $output
-}
+# --- Export to JSON ---
+$result | ConvertTo-Json -Depth 6 | Out-File -FilePath $OutputPath -Encoding utf8
 
-# --- 3. Process each workstation ---
-$i = 0
-foreach ($obj in $results) {
-    $i++
-    $target = $obj.DNSHostName
-    if (-not $target) { $target = $obj.Hostname }
-
-    Write-Progress -Activity "Collecting workstation config" -Status "$target ($i/$($results.Count))" -PercentComplete (($i / $results.Count) * 100)
-
-    # Pre-check: Ping
-    if (-not (Test-Connection -ComputerName $target -Count 1 -Quiet -ErrorAction SilentlyContinue)) {
-        $obj.CollectionError = "Ping failed"
-        continue
-    }
-    $obj.Online = $true
-
-    # Pre-check: WinRM
-    $winrmOk = $false
-    try {
-        Test-WSMan -ComputerName $target -ErrorAction Stop | Out-Null
-        $winrmOk = $true
-    } catch {}
-
-    # Attempt WinRM restart via WMI if needed
-    if (-not $winrmOk) {
-        try {
-            $svc = Get-CimInstance -ComputerName $target -ClassName Win32_Service -Filter "Name='WinRM'" -ErrorAction Stop
-            if ($svc) {
-                Invoke-CimMethod -InputObject $svc -MethodName StopService -ErrorAction SilentlyContinue | Out-Null
-                Start-Sleep -Seconds 2
-                Invoke-CimMethod -InputObject $svc -MethodName StartService -ErrorAction Stop | Out-Null
-                Start-Sleep -Seconds 3
-                Test-WSMan -ComputerName $target -ErrorAction Stop | Out-Null
-                $winrmOk = $true
-            }
-        } catch {
-            $obj.CollectionError = "WinRM restart via WMI failed: $($_.Exception.Message)"
-        }
-    }
-
-    if (-not $winrmOk) {
-        if (-not $obj.CollectionError) { $obj.CollectionError = "WinRM unavailable" }
-        continue
-    }
-
-    # Collect data
-    try {
-        $data = Invoke-Command -ComputerName $target -ScriptBlock $remoteScript -ErrorAction Stop
-        $obj.RemotingAvailable = $true
-        $obj.CollectionTime = Get-Date
-
-        # Merge returned properties into the object
-        foreach ($prop in $data.PSObject.Properties) {
-            if ($obj.PSObject.Properties.Name -contains $prop.Name) {
-                $obj.$($prop.Name) = $prop.Value
-            }
-        }
-    } catch {
-        $obj.CollectionError = "Invoke-Command failed: $($_.Exception.Message)"
-    }
-}
-
-# --- 4. Export to JSON ---
-$results | ConvertTo-Json -Depth 6 | Out-File -FilePath $OutputPath -Encoding utf8
 Write-Host "Complete. Results written to $OutputPath" -ForegroundColor Green
-Write-Host "Online: $(($results | Where-Object Online).Count) | Remoting OK: $(($results | Where-Object RemotingAvailable).Count)" -ForegroundColor Cyan
+Write-Host "Hostname: $($result.Hostname) | OS: $($result.OSCaption) $($result.DisplayVersion)" -ForegroundColor Cyan
+Write-Host "Local users found: $($result.LocalUsers.Count) | Local admins: $($result.LocalAdministrators.Count)" -ForegroundColor Cyan
